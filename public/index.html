@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GhostDrop</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #080808;
+  --text: #efefef;
+  --muted: #555;
+  --muted2: #333;
+  --green: #c8ff6e;
+  --red: #ff5c5c;
+  --border: rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.11);
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --display: 'Syne', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.65; min-height: 100vh; }
+
+/* GITHUB */
+.gh-link { position: fixed; top: 22px; right: 28px; z-index: 200; display: flex; align-items: center; gap: 7px; color: var(--muted); font-family: var(--mono); font-size: 11px; text-decoration: none; transition: color 0.15s; letter-spacing: 0.3px; }
+.gh-link:hover { color: var(--text); }
+.gh-link svg { width: 15px; height: 15px; }
+
+/* SIDEBAR */
+.sidebar { position: fixed; left: 28px; top: 50%; transform: translateY(-50%); z-index: 200; display: flex; flex-direction: column; gap: 2px; }
+.sidebar a { color: var(--muted); font-family: var(--mono); font-size: 11px; text-decoration: none; padding: 5px 0; letter-spacing: 0.3px; cursor: pointer; transition: color 0.15s; display: block; }
+.sidebar a:hover { color: var(--text); }
+.sidebar a.active { color: var(--green); }
+
+/* PAGES */
+.page { display: none; }
+.page.active { display: block; }
+
+/* MAIN */
+.main-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 4rem 2rem; }
+.main-inner { width: 100%; max-width: 440px; }
+.wordmark { font-family: var(--display); font-size: 13px; font-weight: 700; letter-spacing: -0.2px; color: var(--text); margin-bottom: 3.5rem; }
+.wordmark em { color: var(--green); font-style: normal; }
+.drop-zone { border: 1px solid var(--border2); border-radius: 12px; padding: 3.5rem 2rem; text-align: center; cursor: pointer; position: relative; transition: border-color 0.18s; }
+.drop-zone:hover, .drop-zone.dragover { border-color: var(--green); }
+.drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.drop-arrow { margin-bottom: 1.2rem; display: block; }
+.drop-label { font-family: var(--display); font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+.drop-sub { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.file-pill { display: none; margin-top: 12px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 7px; font-family: var(--mono); font-size: 11px; color: var(--green); text-align: left; word-break: break-all; }
+.upload-btn { display: block; width: 100%; margin-top: 12px; padding: 12px; background: var(--green); color: #080808; border: none; border-radius: 8px; font-family: var(--display); font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.15s; letter-spacing: -0.2px; }
+.upload-btn:hover { opacity: 0.85; }
+.upload-btn:active { opacity: 0.7; }
+.upload-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.result { display: none; margin-top: 20px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.result-top { padding: 10px 14px; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 11px; color: var(--green); display: flex; align-items: center; gap: 7px; }
+.result-top::before { content: ''; width: 6px; height: 6px; background: var(--green); border-radius: 50%; flex-shrink: 0; }
+.result-rows { padding: 14px; display: grid; gap: 10px; }
+.r-label { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 3px; }
+.r-val { font-family: var(--mono); font-size: 12px; color: var(--text); display: flex; justify-content: space-between; align-items: center; gap: 8px; word-break: break-all; }
+.r-link { color: var(--text); text-decoration: none; flex: 1; min-width: 0; }
+.r-link:hover { color: var(--green); }
+.copy-btn { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 10px; cursor: pointer; flex-shrink: 0; padding: 2px 4px; transition: color 0.12s; }
+.copy-btn:hover { color: var(--green); }
+.expiry-track { height: 2px; background: var(--border2); border-radius: 2px; overflow: hidden; margin-bottom: 5px; margin-top: 4px; }
+.expiry-fill { height: 100%; background: var(--green); border-radius: 2px; width: 100%; transition: width 1s linear; }
+.expiry-time { font-family: var(--mono); font-size: 10px; color: var(--muted); text-align: right; }
+.retrieve { margin-top: 2.5rem; }
+.section-title { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+.input-row { display: flex; gap: 8px; }
+input[type=text] { flex: 1; background: transparent; border: 1px solid var(--border2); border-radius: 7px; color: var(--text); font-family: var(--mono); font-size: 12px; padding: 9px 12px; outline: none; transition: border-color 0.15s; }
+input[type=text]:focus { border-color: rgba(255,255,255,0.25); }
+input[type=text]::placeholder { color: var(--muted); }
+.fetch-btn { background: transparent; border: 1px solid var(--border2); border-radius: 7px; color: var(--text); font-family: var(--mono); font-size: 12px; padding: 9px 14px; cursor: pointer; white-space: nowrap; transition: border-color 0.15s, color 0.15s; }
+.fetch-btn:hover { border-color: var(--green); color: var(--green); }
+.fetch-msg { display: none; margin-top: 10px; font-family: var(--mono); font-size: 12px; padding: 9px 12px; border-radius: 7px; border: 1px solid; }
+.fetch-msg.ok { color: var(--green); border-color: rgba(200,255,110,0.15); }
+.fetch-msg.err { color: var(--red); border-color: rgba(255,92,92,0.15); }
+
+/* PROSE */
+.prose-content { max-width: 580px; margin: 0 auto; padding: 6rem 2rem 6rem 120px; }
+.prose-content h2 { font-family: var(--display); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.6px; color: var(--text); margin-bottom: 0.4rem; line-height: 1.1; }
+.page-eyebrow { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; display: block; margin-bottom: 1rem; }
+.prose-lead { font-size: 14px; color: var(--muted); margin-bottom: 2rem; line-height: 1.7; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }
+.prose-content h3 { font-family: var(--display); font-size: 13px; font-weight: 700; color: var(--text); margin: 1.8rem 0 0.5rem; letter-spacing: -0.2px; }
+.prose-content p { color: var(--muted); font-size: 13px; line-height: 1.75; margin-bottom: 0.6rem; }
+.prose-content p strong { color: var(--text); font-weight: 500; }
+.prose-content ul { list-style: none; padding: 0; margin-bottom: 0.6rem; }
+.prose-content ul li { color: var(--muted); font-size: 13px; line-height: 1.65; padding: 3px 0 3px 16px; position: relative; }
+.prose-content ul li::before { content: '—'; position: absolute; left: 0; color: var(--muted2); }
+.prose-date { font-family: var(--mono); font-size: 10px; color: var(--muted2); display: block; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+
+/* API */
+.api-wrap { max-width: 580px; margin: 0 auto; padding: 6rem 2rem 6rem 120px; }
+.api-wrap h2 { font-family: var(--display); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.6px; margin-bottom: 0.4rem; }
+.api-base { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); display: block; }
+.api-base code { color: var(--green); }
+.ep { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+.ep-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; transition: background 0.12s; }
+.ep-head:hover { background: rgba(255,255,255,0.02); }
+.method { font-family: var(--mono); font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; }
+.get { background: rgba(100,160,255,0.1); color: #7ab3f5; }
+.post { background: rgba(200,255,110,0.1); color: var(--green); }
+.ep-path { font-family: var(--mono); font-size: 12px; color: var(--text); flex: 1; }
+.ep-hint { font-size: 11px; color: var(--muted); }
+.chev { color: var(--muted); font-size: 10px; transition: transform 0.18s; flex-shrink: 0; }
+.chev.open { transform: rotate(90deg); }
+.ep-body { display: none; padding: 14px; border-top: 1px solid var(--border); }
+.ep-body.open { display: block; }
+.ep-body p { font-size: 12px; color: var(--muted); line-height: 1.7; margin-bottom: 10px; }
+.ep-body p code { font-family: var(--mono); font-size: 11px; color: var(--green); }
+.code-blk { background: #040404; border: 1px solid var(--border); border-radius: 7px; padding: 12px 14px; font-family: var(--mono); font-size: 11px; color: var(--text); overflow-x: auto; line-height: 1.65; margin-bottom: 10px; position: relative; }
+.code-blk .cm { color: #333; }
+.code-blk .k { color: #7ab3f5; }
+.code-blk .s { color: var(--green); }
+.ccopy { position: absolute; top: 8px; right: 8px; background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font-family: var(--mono); font-size: 10px; padding: 2px 7px; cursor: pointer; transition: color 0.12s; }
+.ccopy:hover { color: var(--green); }
+.ptbl { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px; }
+.ptbl th { text-align: left; font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted2); padding: 0 8px 6px 0; border-bottom: 1px solid var(--border); }
+.ptbl td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+.ptbl td:first-child { font-family: var(--mono); color: var(--text); }
+.spill { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 6px; border-radius: 3px; margin-right: 3px; }
+.s200 { background: rgba(200,255,110,0.08); color: var(--green); }
+.s404 { background: rgba(255,187,85,0.08); color: #ffbb55; }
+.s410 { background: rgba(255,92,92,0.08); color: var(--red); }
+.s500 { background: rgba(255,92,92,0.08); color: var(--red); }
+
+/* TOAST */
+.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(6px); background: #111; border: 1px solid var(--border2); border-radius: 7px; padding: 8px 16px; font-family: var(--mono); font-size: 11px; color: var(--text); opacity: 0; pointer-events: none; transition: opacity 0.18s, transform 0.18s; z-index: 999; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.spin { display: inline-block; width: 12px; height: 12px; border: 1.5px solid rgba(8,8,8,0.3); border-top-color: #080808; border-radius: 50%; animation: rot 0.7s linear infinite; vertical-align: middle; margin-right: 5px; }
+@keyframes rot { to { transform: rotate(360deg); } }
+
+@media (max-width: 600px) {
+  .sidebar { display: none; }
+  .prose-content, .api-wrap { padding: 4rem 1.5rem; }
+  .gh-link { top: 16px; right: 16px; }
+}
+</style>
+</head>
+<body>
+
+<a class="gh-link" href="https://github.com" target="_blank" rel="noopener">
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+  github
+</a>
+
+<nav class="sidebar">
+  <a onclick="showPage('main')" class="active" id="snav-main">upload</a>
+  <a onclick="showPage('api')" id="snav-api">api</a>
+  <a onclick="showPage('tos')" id="snav-tos">terms</a>
+  <a onclick="showPage('privacy')" id="snav-privacy">privacy</a>
+</nav>
+
+<!-- MAIN -->
+<div class="page active" id="page-main">
+  <div class="main-wrap">
+    <div class="main-inner">
+      <div class="wordmark">Ghost<em>Drop</em></div>
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" onchange="onFileSelect()">
+        <span class="drop-arrow">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <path d="M14 4v14M8 12l6 6 6-6" stroke="#3a3a3a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M5 22h18" stroke="#3a3a3a" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <p class="drop-label">drop a file or click to browse</p>
+        <p class="drop-sub">max 500MB  &middot; expires in 6 hours</p>
+      </div>
+      <div class="file-pill" id="filePill"></div>
+      <button type="button" class="upload-btn" id="uploadBtn" onclick="uploadFile(event)" disabled>upload</button>
+
+      <div class="result" id="resultCard">
+        <div class="result-top">uploaded</div>
+        <div class="result-rows">
+          <div>
+            <div class="r-label">link</div>
+            <div class="r-val"><a id="res-url" class="r-link" style="font-size:11px;" target="_blank" rel="noopener"></a><button type="button" class="copy-btn" onclick="copyLink(event,this)">copy</button></div>
+          </div>
+          <div>
+            <div class="r-label">expires</div>
+            <div class="expiry-track"><div class="expiry-fill" id="expiryFill"></div></div>
+            <div class="expiry-time" id="expiryTime">6h 0m</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="retrieve">
+        <div class="section-title">retrieve by id</div>
+        <div class="input-row">
+          <input type="text" id="fileIdInput" placeholder="paste file id here…">
+          <button type="button" class="fetch-btn" onclick="fetchFile(event)">fetch</button>
+        </div>
+        <div class="fetch-msg" id="fetchMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- API -->
+<div class="page" id="page-api">
+  <div class="api-wrap">
+    <span class="page-eyebrow">developer</span>
+    <h2>API Reference</h2>
+    <span class="api-base">Base URL: <code>http://localhost:8000</code> &nbsp;·&nbsp; No auth &nbsp;·&nbsp; CORS open</span>
+
+    <div class="ep">
+      <div class="ep-head" onclick="toggleEp(this)">
+        <span class="method get">GET</span>
+        <span class="ep-path">/</span>
+        <span class="ep-hint">health check</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="ep-body">
+        <p>Returns a placeholder confirming the server is alive.</p>
+        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button><span class="cm">// 200 OK</span>
+{ <span class="k">"message"</span>: <span class="s">"you are not supposed to be here"</span> }</div>
+      </div>
+    </div>
+
+    <div class="ep">
+      <div class="ep-head" onclick="toggleEp(this)">
+        <span class="method post">POST</span>
+        <span class="ep-path">/upload/</span>
+        <span class="ep-hint">upload a file</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="ep-body">
+        <p>Accepts <code>multipart/form-data</code> with a single <code>file</code> field. Returns a UUID and expiry metadata.</p>
+        <table class="ptbl">
+          <thead><tr><th>field</th><th>type</th><th>required</th><th>description</th></tr></thead>
+          <tbody><tr><td>file</td><td>file</td><td style="color:var(--green)">yes</td><td>the file to upload</td></tr></tbody>
+        </table>
+        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button>curl -X POST <span class="s">"http://localhost:8000/upload/"</span> \
+  -F <span class="s">"file=@example.txt"</span></div>
+        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button><span class="cm">// 200 OK</span>
+{
+  <span class="k">"id"</span>: <span class="s">"2b8c5f4c-0f1b-4d8e-8d3c-1f3a4d6b7e9f"</span>,
+  <span class="k">"original_name"</span>: <span class="s">"example.txt"</span>,
+  <span class="k">"expires_in_hours"</span>: 6
+}</div>
+      </div>
+    </div>
+
+    <div class="ep">
+      <div class="ep-head" onclick="toggleEp(this)">
+        <span class="method get">GET</span>
+        <span class="ep-path">/file/{file_id}</span>
+        <span class="ep-hint">download a file</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="ep-body">
+        <p>Downloads a file by UUID. Serves the original filename. If expired, deletes and returns 410.</p>
+        <table class="ptbl">
+          <thead><tr><th>param</th><th>in</th><th>description</th></tr></thead>
+          <tbody><tr><td>file_id</td><td>path</td><td>UUID from POST /upload/</td></tr></tbody>
+        </table>
+        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button>curl -O -J <span class="s">"http://localhost:8000/file/{file_id}"</span></div>
+        <div class="code-blk"><span class="spill s200">200</span> binary file stream
+<span class="spill s404">404</span> { <span class="k">"error"</span>: <span class="s">"File not found"</span> }
+<span class="spill s410">410</span> { <span class="k">"error"</span>: <span class="s">"this file is gone"</span> }
+<span class="spill s500">500</span> { <span class="k">"error"</span>: <span class="s">"Internal server error"</span> }</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TERMS -->
+<div class="page" id="page-tos">
+  <div class="prose-content">
+    <span class="page-eyebrow">legal</span>
+    <h2>Terms of Service</h2>
+    <p class="prose-lead">By using GhostDrop you agree to these terms. GhostDrop is a minimal ephemeral file-sharing service — no accounts, no persistence beyond 6 hours.</p>
+    <h3>1. Acceptance</h3>
+    <p>Accessing or using GhostDrop constitutes acceptance of these Terms. If you disagree, do not use the service.</p>
+    <h3>2. What the service does</h3>
+    <p>GhostDrop lets you upload files that are automatically deleted after <strong>6 hours</strong>. No accounts are required. Files are accessible to anyone with the generated link.</p>
+    <h3>3. Acceptable use</h3>
+    <p>You may not use GhostDrop to upload or share:</p>
+    <ul>
+      <li>Content that is illegal under applicable law</li>
+      <li>Malware, viruses, or any malicious code</li>
+      <li>Content that infringes intellectual property rights</li>
+      <li>Child sexual abuse material or exploitative content involving minors</li>
+      <li>Content intended to harass, threaten, or harm any person</li>
+      <li>Personal data of others without their consent</li>
+    </ul>
+    <h3>4. No guarantees on availability</h3>
+    <p>Files are deleted after approximately 6 hours. <strong>We make no guarantee</strong> of availability within that window. Do not use GhostDrop as a backup or primary storage solution.</p>
+    <h3>5. No warranty</h3>
+    <p>GhostDrop is provided <strong>"as is"</strong> without any warranty, express or implied.</p>
+    <h3>6. Limitation of liability</h3>
+    <p>To the maximum extent permitted by law, GhostDrop and its operators are not liable for any direct, indirect, or consequential damages arising from your use of the service.</p>
+    <h3>7. Termination</h3>
+    <p>We may suspend or terminate access at any time, for any reason, without notice.</p>
+    <h3>8. Changes</h3>
+    <p>These Terms may be updated at any time. Continued use after changes are posted constitutes acceptance.</p>
+    <h3>9. Contact</h3>
+    <p>Questions about these Terms can be directed to the project repository.</p>
+    <span class="prose-date">Last updated: 2025 &middot; GhostDrop Terms of Service</span>
+  </div>
+</div>
+
+<!-- PRIVACY -->
+<div class="page" id="page-privacy">
+  <div class="prose-content">
+    <span class="page-eyebrow">legal</span>
+    <h2>Privacy Policy</h2>
+    <p class="prose-lead">GhostDrop collects almost nothing. Files and their metadata are deleted automatically after 6 hours.</p>
+    <h3>What we store temporarily</h3>
+    <p>When you upload a file, GhostDrop holds the file contents (under a randomly generated UUID) and a metadata entry with the original filename and expiry timestamp. Both are <strong>automatically deleted after 6 hours</strong>.</p>
+    <h3>What we do not collect</h3>
+    <ul>
+      <li>No names, email addresses, or personal identifiers</li>
+      <li>No user accounts or authentication data</li>
+      <li>No cookies or persistent tracking</li>
+      <li>No analytics or behavioural data</li>
+      <li>We do not sell or share data with third parties</li>
+    </ul>
+    <h3>File access</h3>
+    <p>Files are accessible to anyone with the UUID. <strong>Treat your file ID as a secret.</strong> There are no access controls beyond link knowledge.</p>
+    <h3>Server logs</h3>
+    <p>The server may generate standard HTTP access logs (IP addresses, request paths) during normal operation. These are not persisted beyond the server process lifetime.</p>
+    <h3>Security</h3>
+    <p>Files are not encrypted at rest in the default configuration. Network transport security depends on your deployment setup.</p>
+    <h3>Children's privacy</h3>
+    <p>GhostDrop is not directed at children under 13. We do not knowingly collect information from minors.</p>
+    <h3>Changes</h3>
+    <p>We may update this policy at any time. The current version is always available here.</p>
+    <h3>Contact</h3>
+    <p>Questions about this policy can be directed to the project repository.</p>
+    <span class="prose-date">Last updated: 2025 &middot; GhostDrop Privacy Policy</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = 'http://localhost:8000';
+let selectedFile = null, expiryTimer = null;
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const sn = document.getElementById('snav-' + id);
+  if (sn) sn.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function onFileSelect() {
+  const f = document.getElementById('fileInput').files[0];
+  if (!f) return;
+  selectedFile = f;
+  const pill = document.getElementById('filePill');
+  pill.style.display = 'block';
+  pill.textContent = f.name + '  ·  ' + fmtBytes(f.size);
+  document.getElementById('uploadBtn').disabled = false;
+}
+
+function fmtBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+function fmtTime(s) {
+  if (s <= 0) return 'expired';
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return h + 'h ' + m + 'm';
+  if (m > 0) return m + 'm ' + sec + 's';
+  return sec + 's';
+}
+
+async function uploadFile(event) {
+  event?.preventDefault();
+  if (!selectedFile) return;
+  const btn = document.getElementById('uploadBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>uploading…';
+  const fd = new FormData();
+  fd.append('file', selectedFile);
+  try {
+    const res = await fetch(BASE + '/upload/', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'upload failed');
+    const url = BASE + '/file/' + data.id;
+    const urlNode = document.getElementById('res-url');
+    urlNode.textContent = url;
+    urlNode.href = url;
+    document.getElementById('resultCard').style.display = 'block';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('filePill').style.display = 'none';
+    document.getElementById('filePill').textContent = '';
+    selectedFile = null;
+    startExpiry(Math.round((data.expires_in_hours || 6) * 3600));
+    navigator.clipboard?.writeText(url).catch(() => {});
+    toast('uploaded — link copied');
+
+    if (res.status === 413) {
+      toast('file too large (max 500MB)', true);
+    }
+
+  } catch(e) {
+    toast('error: ' + e.message, true);
+  } finally {
+    btn.disabled = !selectedFile;
+    btn.textContent = 'upload';
+  }
+}
+
+function startExpiry(total) {
+  if (expiryTimer) clearInterval(expiryTimer);
+  let rem = total;
+  const fill = document.getElementById('expiryFill');
+  const lbl = document.getElementById('expiryTime');
+  fill.style.width = '100%';
+  lbl.textContent = fmtTime(rem);
+  expiryTimer = setInterval(() => {
+    rem--;
+    fill.style.width = Math.max(0, rem / total * 100) + '%';
+    lbl.textContent = fmtTime(rem);
+    if (rem <= 0) clearInterval(expiryTimer);
+  }, 1000);
+}
+
+async function fetchFile(event) {
+  event?.preventDefault();
+  const id = document.getElementById('fileIdInput').value.trim();
+  const msg = document.getElementById('fetchMsg');
+  if (!id) { toast('enter a file id'); return; }
+  msg.style.display = 'none';
+  try {
+    const res = await fetch(BASE + "/" + id, { method: 'GET' });
+    msg.style.display = 'block';
+    if (res.ok) {
+      msg.className = 'fetch-msg ok';
+      msg.innerHTML = 'found — <a href="' + BASE + '/file/' + id + '" style="color:var(--green)" download>download</a>';
+    } else if (res.status === 410) {
+      msg.className = 'fetch-msg err'; msg.textContent = 'expired — file deleted';
+    } else {
+      msg.className = 'fetch-msg err'; msg.textContent = 'not found (404)';
+    }
+  } catch {
+    msg.style.display = 'block';
+    msg.className = 'fetch-msg err';
+    msg.textContent = 'server unreachable';
+  }
+}
+
+function copyLink(event, btn) {
+  event?.preventDefault();
+  const text = document.getElementById('res-url').href;
+  navigator.clipboard?.writeText(text).then(() => {
+    btn.textContent = 'copied'; setTimeout(() => btn.textContent = 'copy', 1400);
+  });
+}
+
+function cc(btn) {
+  const txt = btn.parentElement.innerText.replace(/^copy\n/, '').trim();
+  navigator.clipboard?.writeText(txt).then(() => {
+    btn.textContent = 'copied'; setTimeout(() => btn.textContent = 'copy', 1400);
+  });
+}
+
+function toggleEp(head) {
+  const body = head.nextElementSibling;
+  const chev = head.querySelector('.chev');
+  const open = body.classList.toggle('open');
+  chev.classList.toggle('open', open);
+}
+
+function toast(msg, err = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = err ? 'rgba(255,92,92,0.2)' : 'rgba(255,255,255,0.1)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (!f) return;
+  selectedFile = f;
+  const pill = document.getElementById('filePill');
+  pill.style.display = 'block';
+  pill.textContent = f.name + '  ·  ' + fmtBytes(f.size);
+  document.getElementById('uploadBtn').disabled = false;
+});
+
+document.getElementById('fileIdInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') fetchFile();
+});
+</script>
+</body>
+</html>

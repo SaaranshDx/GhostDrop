@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, File, Request, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import uvicorn
 import os
@@ -13,7 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-EXPIRY_HOURS = 0.0166667
+EXPIRY_HOURS = 0.0166667 # 1 min for testing
 EXPIRY_DURATION = timedelta(hours=EXPIRY_HOURS)
 EXPIRED_MESSAGE = "this file is gone"
 UPLOAD_DIR = Path("uploads")
@@ -92,6 +93,7 @@ app.add_middleware(
 )
 
 
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
@@ -112,9 +114,14 @@ async def generic_exception_handler(request: Request, exc: Exception):
 async def index():
     return {"message": "you are not supposed to be here"}
 
+MAX_SIZE = 500 * 1024 * 1024  # 500MB
 
 @app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
+
+    if file.size > MAX_SIZE:
+        raise HTTPException(status_code=413, detail="File too large")
+
     cleanup_expired_files()
 
     file_id = str(uuid.uuid4())
@@ -132,7 +139,7 @@ async def upload_file(file: UploadFile = File(...)):
     }
 
 
-@app.get("/file/{file_id}")
+@app.get("/{file_id}")
 async def get_file(file_id: str):
     metadata = load_metadata(file_id)
     if metadata and is_expired(metadata):
