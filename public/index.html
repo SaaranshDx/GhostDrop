@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GhostDrop</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -23,9 +24,12 @@
 body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.65; min-height: 100vh; }
 
 /* GITHUB */
-.gh-link { position: fixed; top: 22px; right: 28px; z-index: 200; display: flex; align-items: center; gap: 7px; color: var(--muted); font-family: var(--mono); font-size: 11px; text-decoration: none; transition: color 0.15s; letter-spacing: 0.3px; }
-.gh-link:hover { color: var(--text); }
-.gh-link svg { width: 15px; height: 15px; }
+.top-links { position: fixed; top: 22px; right: 28px; z-index: 200; display: flex; align-items: center; gap: 14px; }
+.top-link { display: flex; align-items: center; gap: 7px; color: var(--muted); font-family: var(--mono); font-size: 11px; text-decoration: none; transition: color 0.15s; letter-spacing: 0.3px; }
+.top-link:hover { color: var(--text); }
+.top-link svg, .top-link i { width: 15px; height: 15px; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; }
+.mobile-link { color: var(--green); }
+.mobile-link:hover { color: var(--text); }
 
 /* SIDEBAR */
 .sidebar { position: fixed; left: 28px; top: 50%; transform: translateY(-50%); z-index: 200; display: flex; flex-direction: column; gap: 2px; }
@@ -135,16 +139,23 @@ input[type=text]::placeholder { color: var(--muted); }
 @media (max-width: 600px) {
   .sidebar { display: none; }
   .prose-content, .api-wrap { padding: 4rem 1.5rem; }
-  .gh-link { top: 16px; right: 16px; }
+  .top-links { top: 16px; right: 16px; }
+  .mobile-link { display: none; }
 }
 </style>
 </head>
 <body>
 
-<a class="gh-link" href="https://github.com" target="_blank" rel="noopener">
-  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-  github
-</a>
+<div class="top-links">
+  <a class="top-link mobile-link" href="https://github.com/SaaranshDx/GhostDrop/releases/download/Release/app-release.apk" download>
+    <i class="fa-brands fa-android" aria-hidden="true"></i>
+    download mobile
+  </a>
+  <a class="top-link gh-link" href="https://github.com" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+    github
+  </a>
+</div>
 
 <nav class="sidebar">
   <a onclick="showPage('main')" class="active" id="snav-main">upload</a>
@@ -167,7 +178,7 @@ input[type=text]::placeholder { color: var(--muted); }
           </svg>
         </span>
         <p class="drop-label">drop a file or click to browse</p>
-        <p class="drop-sub">max 500MB  &middot; expires in 6 hours</p>
+        <p class="drop-sub">max 100MB  &middot; expires in 6 hours</p>
       </div>
       <div class="file-pill" id="filePill"></div>
       <button type="button" class="upload-btn" id="uploadBtn" onclick="uploadFile(event)" disabled>upload</button>
@@ -247,7 +258,7 @@ input[type=text]::placeholder { color: var(--muted); }
     <div class="ep">
       <div class="ep-head" onclick="toggleEp(this)">
         <span class="method get">GET</span>
-        <span class="ep-path">/file/{file_id}</span>
+        <span class="ep-path">/{file_id}</span>
         <span class="ep-hint">download a file</span>
         <span class="chev">▶</span>
       </div>
@@ -257,7 +268,7 @@ input[type=text]::placeholder { color: var(--muted); }
           <thead><tr><th>param</th><th>in</th><th>description</th></tr></thead>
           <tbody><tr><td>file_id</td><td>path</td><td>UUID from POST /upload/</td></tr></tbody>
         </table>
-        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button>curl -O -J <span class="s">"http://localhost:8000/file/{file_id}"</span></div>
+        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button>curl -O -J <span class="s">"https://ghostdrop-reverseproxy.vercel.app/{file_id}"</span></div>
         <div class="code-blk"><span class="spill s200">200</span> binary file stream
 <span class="spill s404">404</span> { <span class="k">"error"</span>: <span class="s">"File not found"</span> }
 <span class="spill s410">410</span> { <span class="k">"error"</span>: <span class="s">"this file is gone"</span> }
@@ -338,7 +349,7 @@ input[type=text]::placeholder { color: var(--muted); }
 <div class="toast" id="toast"></div>
 
 <script>
-const BASE = 'http://localhost:8000';
+const BASE = 'https://link.ghostdrop.qzz.io';
 let selectedFile = null, expiryTimer = null;
 
 function showPage(id) {
@@ -388,7 +399,7 @@ async function uploadFile(event) {
     const res = await fetch(BASE + '/upload/', { method: 'POST', body: fd });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'upload failed');
-    const url = BASE + '/file/' + data.id;
+    const url = BASE + '/' + data.id;
     const urlNode = document.getElementById('res-url');
     urlNode.textContent = url;
     urlNode.href = url;
@@ -397,12 +408,12 @@ async function uploadFile(event) {
     document.getElementById('filePill').style.display = 'none';
     document.getElementById('filePill').textContent = '';
     selectedFile = null;
-    startExpiry(Math.round((data.expires_in_hours || 6) * 3600));
+    startExpiry(6 * 3600);
     navigator.clipboard?.writeText(url).catch(() => {});
     toast('uploaded — link copied');
 
     if (res.status === 413) {
-      toast('file too large (max 500MB)', true);
+      toast('file too large (max 100MB)', true);
     }
 
   } catch(e) {
