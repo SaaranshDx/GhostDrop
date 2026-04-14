@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-EXPIRY_HOURS = 0.0166667 # 1 min for testing
+EXPIRY_HOURS = 6 # 6 hours 
 EXPIRY_DURATION = timedelta(hours=EXPIRY_HOURS)
 EXPIRED_MESSAGE = "this file is gone"
 UPLOAD_DIR = Path("uploads")
@@ -112,9 +112,9 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 @app.get("/")
 async def index():
-    return {"message": "you are not supposed to be here"}
+    return {"Status": "okish"}
 
-MAX_SIZE = 500 * 1024 * 1024  # 500MB
+MAX_SIZE = 100 * 1024 * 1024  # 100MB
 
 @app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
