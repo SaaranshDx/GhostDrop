@@ -1,6 +1,6 @@
 # GhostDrop
 
-![Project Banner](assets/banner.png)
+<img src="assets/banner.png" alt="Banner" width="100%">
 
 Use [here](https://ghostdrop.qzz.io)
 
