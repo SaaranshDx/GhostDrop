@@ -1,6 +1,6 @@
 # GhostDrop
 
-simple, free, fast, private. The file sharing that actually works
+![Project Banner](assets/banner.png)
 
 Use [here](https://ghostdrop.qzz.io)
 
