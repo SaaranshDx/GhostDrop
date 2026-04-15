@@ -1,5 +1,3 @@
-# GhostDrop
-
 <img src="assets/banner.png" alt="Banner" width="100%">
 
 GhostDrop is a fast and simple file sharing service that lets you upload files and instantly get a shareable link.
