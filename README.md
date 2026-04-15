@@ -1,8 +1,6 @@
 # GhostDrop
 
-Free, Fast, Private.
-
-The best temporary file sharing service
+simple, free, fast, private. The file sharing that actually works
 
 Use [here](https://ghostdrop.qzz.io)
 
