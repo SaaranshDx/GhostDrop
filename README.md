@@ -13,3 +13,10 @@ No accounts. No hassle. Just upload and share.
 ## API Documentation
 
 [https://ghostdrop.qzz.io/#api-docs](https://ghostdrop.qzz.io/#api-docs)
+
+## Features
+
+- Instant shareable links
+- Temporary file storage
+- Mobile app
+- Lightweight and fast
