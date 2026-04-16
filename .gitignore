@@ -5,3 +5,4 @@ reverse-proxy/.git
 reverse-proxy/.gitignore
 reverse-proxy/.env
 reverse-proxy/node_modules
+pbserver/

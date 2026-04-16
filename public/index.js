@@ -1,4 +1,10 @@
-const BASE = ' https://election-lunacy-prologue.ngrok-free.dev';
+async function getapiurl() {
+  const apiurlproivder = 'https://raw.githubusercontent.com/SaaranshDx/GhostDrop/refs/heads/main/serverurl'
+  const url = await fetch(apiurlproviderurl);
+  return url
+}
+
+const BASE = getapiurl()
 let selectedFile = null, expiryTimer = null;
 
 function showPage(id) {
