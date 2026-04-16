@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 import os
 from dotenv import load_dotenv
+from pyngrok import ngrok
 
 load_dotenv()
 
@@ -20,6 +21,10 @@ EXPIRED_MESSAGE = "this file is gone"
 UPLOAD_DIR = Path("uploads")
 METADATA_DIR = Path("uploads_meta")
 
+ngrok.set_auth_token(os.getenv("NGROK_TOKEN"))
+
+tunnel = ngrok.connect(25590, "http")
+print(f"Public HTTPS URL: {tunnel.public_url}")
 
 def metadata_path(file_id: str) -> Path:
     return METADATA_DIR / f"{file_id}.json"

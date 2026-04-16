@@ -1,4 +1,4 @@
-const BASE = 'https://ghostdropreverseproxy.saaransh762.workers.dev';
+const BASE = ' https://election-lunacy-prologue.ngrok-free.dev';
 let selectedFile = null, expiryTimer = null;
 
 function showPage(id) {
