@@ -1,4 +1,4 @@
-const BASE = 'https://link.ghostdrop.qzz.io';
+const BASE = 'https://ghostdropreverseproxy.saaransh762.workers.dev';
 let selectedFile = null, expiryTimer = null;
 
 function showPage(id) {
