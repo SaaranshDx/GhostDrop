@@ -1,10 +1,17 @@
-async function getapiurl() {
-  const apiurlproivder = 'https://raw.githubusercontent.com/SaaranshDx/GhostDrop/refs/heads/main/serverurl'
-  const url = await fetch(apiurlproviderurl);
-  return url
+async function getApiUrl() {
+  const apiUrlProvider = "https://raw.githubusercontent.com/SaaranshDx/GhostDrop/main/serverurl";
+
+  const res = await fetch(apiUrlProvider);
+
+  if (!res.ok) {
+    throw new Error("failed to fetch");
+  }
+
+  const url = await res.text();
+  return url.trim();
 }
 
-const BASE = getapiurl()
+const BASE = await getApiUrl();
 let selectedFile = null, expiryTimer = null;
 
 function showPage(id) {
@@ -54,7 +61,7 @@ async function uploadFile(event) {
     const res = await fetch(BASE + '/upload/', { method: 'POST', body: fd });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'upload failed');
-    const url = BASE + '/' + data.id;
+    const url = 'https://link.ghostdrop.qzz.io' + '/' + data.id;
     const urlNode = document.getElementById('res-url');
     urlNode.textContent = url;
     urlNode.href = url;
