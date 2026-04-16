@@ -54,14 +54,14 @@
         <p class="drop-sub">max 100MB  &middot; expires in 6 hours</p>
       </div>
       <div class="file-pill" id="filePill"></div>
-      <button type="button" class="upload-btn" id="uploadBtn" onclick="uploadFile(event)" disabled>upload</button>
+      <button type="button" class="upload-btn" id="uploadBtn" disabled>upload</button>
 
       <div class="result" id="resultCard">
         <div class="result-top">uploaded</div>
         <div class="result-rows">
           <div>
             <div class="r-label">link</div>
-            <div class="r-val"><a id="res-url" class="r-link" style="font-size:11px;" target="_blank" rel="noopener"></a><button type="button" class="copy-btn" onclick="copyLink(event,this)">copy</button></div>
+            <div class="r-val"><a id="res-url" class="r-link" style="font-size:11px;" target="_blank" rel="noopener"></a><button type="button" class="copy-btn">copy</button></div>
           </div>
           <div>
             <div class="r-label">expires</div>
@@ -113,6 +113,7 @@
       </div>
       <div class="ep-body">
         <p>Accepts <code>multipart/form-data</code> with a single <code>file</code> field. Returns a UUID and expiry metadata.</p>
+        <p><strong>Warning:</strong> API file uploads are limited to <strong>4.5 MB</strong>. Larger files will be rejected.</p>
         <table class="ptbl">
           <thead><tr><th>field</th><th>type</th><th>required</th><th>description</th></tr></thead>
           <tbody><tr><td>file</td><td>file</td><td style="color:var(--green)">yes</td><td>the file to upload</td></tr></tbody>

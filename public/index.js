@@ -1,3 +1,10 @@
+document.querySelectorAll(".copy-btn").forEach(btn => {
+  btn.addEventListener("click", (event) => copyLink(event, btn));
+});
+
+document.getElementById("uploadBtn")
+  .addEventListener("click", uploadFile);
+
 async function getApiUrl() {
   const apiUrlProvider = "https://raw.githubusercontent.com/SaaranshDx/GhostDrop/main/serverurl";
 
@@ -14,6 +21,18 @@ async function getApiUrl() {
 const BASE = await getApiUrl();
 let selectedFile = null, expiryTimer = null;
 
+function setSelectedFile(file) {
+  if (!file) {
+    return;
+  }
+
+  selectedFile = file;
+  const pill = document.getElementById('filePill');
+  pill.style.display = 'block';
+  pill.textContent = file.name + '  ·  ' + fmtBytes(file.size);
+  document.getElementById('uploadBtn').disabled = false;
+}
+
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
@@ -25,12 +44,7 @@ function showPage(id) {
 
 function onFileSelect() {
   const f = document.getElementById('fileInput').files[0];
-  if (!f) return;
-  selectedFile = f;
-  const pill = document.getElementById('filePill');
-  pill.style.display = 'block';
-  pill.textContent = f.name + '  ·  ' + fmtBytes(f.size);
-  document.getElementById('uploadBtn').disabled = false;
+  setSelectedFile(f);
 }
 
 function fmtBytes(b) {
@@ -161,14 +175,16 @@ dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
 dz.addEventListener('drop', e => {
   e.preventDefault(); dz.classList.remove('dragover');
   const f = e.dataTransfer.files[0];
-  if (!f) return;
-  selectedFile = f;
-  const pill = document.getElementById('filePill');
-  pill.style.display = 'block';
-  pill.textContent = f.name + '  ·  ' + fmtBytes(f.size);
-  document.getElementById('uploadBtn').disabled = false;
+  setSelectedFile(f);
 });
 
 document.getElementById('fileIdInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') fetchFile();
 });
+
+window.showPage = showPage;
+window.showpage = showPage;
+window.onFileSelect = onFileSelect;
+window.fetchFile = fetchFile;
+window.toggleEp = toggleEp;
+window.cc = cc;
