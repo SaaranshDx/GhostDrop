@@ -1,0 +1,242 @@
+:root {
+  --bg: #080808;
+  --text: #efefef;
+  --muted: #555;
+  --muted2: #333;
+  --green: #c8ff6e;
+  --border: rgba(255,255,255,0.06);
+  --mono: "DM Mono", monospace;
+  --sans: "DM Sans", sans-serif;
+  --display: "Syne", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(200,255,110,0.08), transparent 32%),
+    linear-gradient(180deg, #0b0b0b 0%, #060606 100%);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.status-belt {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 300;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(200,255,110,0.18);
+  background:
+    linear-gradient(90deg, rgba(200,255,110,0.18), rgba(200,255,110,0.08) 30%, rgba(255,255,255,0.03) 100%),
+    repeating-linear-gradient(90deg, rgba(200,255,110,0.08) 0 14px, transparent 14px 28px),
+    #090909;
+}
+
+.status-belt-track {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  white-space: nowrap;
+  animation: belt-scroll 20s linear infinite;
+}
+
+.status-belt-item {
+  flex-shrink: 0;
+  padding: 9px 0;
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.status-belt-item strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.top-links {
+  position: fixed;
+  top: 54px;
+  right: 28px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.top-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  text-decoration: none;
+  transition: color 0.15s ease;
+  letter-spacing: 0.3px;
+}
+
+.top-link:hover {
+  color: var(--text);
+}
+
+.top-link svg,
+.top-link i {
+  width: 15px;
+  height: 15px;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-link,
+.mobile-link {
+  color: var(--green);
+}
+
+.download-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7rem 1.5rem 3rem;
+}
+
+.download-content {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.card-eyebrow {
+  margin-bottom: 0.9rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+}
+
+.download-title {
+  margin-bottom: 0.8rem;
+  font-family: var(--display);
+  font-size: clamp(2.2rem, 8vw, 4.4rem);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 0.94;
+}
+
+.download-title em {
+  color: var(--green);
+  font-style: normal;
+}
+
+.download-lead {
+  max-width: 42ch;
+  margin-bottom: 1.3rem;
+  color: #d6d6d6;
+  font-size: 15px;
+}
+
+.download-countdown {
+  margin-bottom: 1rem;
+  color: var(--green);
+  font-family: var(--display);
+  font-size: clamp(1.1rem, 4vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+#countdownValue {
+  display: inline-block;
+  min-width: 1ch;
+}
+
+.download-meta {
+  margin-bottom: 1.4rem;
+}
+
+.meta-label {
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.meta-value {
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 160px;
+  padding: 0.9rem 1.2rem;
+  border-radius: 999px;
+  background: var(--green);
+  color: #080808;
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.download-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.92;
+}
+
+.download-note {
+  max-width: 48ch;
+  margin-top: 1rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+@keyframes belt-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (max-width: 700px) {
+  .top-links {
+    left: 16px;
+    right: 16px;
+    top: 46px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+  }
+
+  .download-wrap {
+    padding-top: 8.5rem;
+  }
+
+  .status-belt-item {
+    padding: 8px 0;
+    font-size: 9px;
+  }
+}

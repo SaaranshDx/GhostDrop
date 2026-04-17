@@ -5,6 +5,8 @@ document.querySelectorAll(".copy-btn").forEach(btn => {
 document.getElementById("uploadBtn")
   .addEventListener("click", uploadFile);
 
+let tries = 0
+
 async function getApiUrl() {
   const apiUrlProvider = "https://raw.githubusercontent.com/SaaranshDx/GhostDrop/main/serverurl";
 
@@ -88,6 +90,11 @@ async function uploadFile(event) {
     navigator.clipboard?.writeText(url).catch(() => {});
     toast('uploaded — link copied');
 
+    if (res.status === 400) {
+      tries + 1;
+      reupload();
+    }
+
     if (res.status === 413) {
       toast('file too large (max 100MB)', true);
     }
@@ -98,6 +105,17 @@ async function uploadFile(event) {
     btn.disabled = !selectedFile;
     btn.textContent = 'upload';
   }
+}
+
+async function reupload() {
+  if (tries >= 3) {
+    toast('upload failed after multiple attempts', true);
+    tries = 0;
+    return;
+  }
+
+  await uploadFile();
+
 }
 
 function startExpiry(total) {
