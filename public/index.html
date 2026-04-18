@@ -93,14 +93,16 @@
     <div class="ep">
       <div class="ep-head" onclick="toggleEp(this)">
         <span class="method get">GET</span>
-        <span class="ep-path">/</span>
+        <span class="ep-path">/health</span>
         <span class="ep-hint">health check</span>
         <span class="chev">▶</span>
       </div>
       <div class="ep-body">
-        <p>Returns a placeholder confirming the server is alive.</p>
-        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button><span class="cm">// 200 OK</span>
-{ <span class="k">"message"</span>: <span class="s">"you are not supposed to be here"</span> }</div>
+        <p>Returns the server information about the server such as the amount of files present the uptime the ram and cpu usage</p>
+        <div class="code-blk">
+          <button class="ccopy" onclick="cc(this)">copy</button><span class="cm">// 200 OK</span>
+{ <span class="k">"files_stored"</span>: <span class="n">1</span>, <span class="k">"cpu_usage"</span>: <span class="s">"6.9%"</span>, <span class="k">"memory_usage"</span>: <span class="s">"63.9%"</span>, <span class="k">"uptime"</span>: <span class="s">"31.02 seconds"</span> }
+        </div>
       </div>
     </div>
 
