@@ -15,6 +15,7 @@ import os
 import time
 from dotenv import load_dotenv
 from pyngrok import ngrok
+import psutil
 
 load_dotenv()
 
@@ -46,6 +47,8 @@ UPLOAD_DIR = Path("uploads")
 METADATA_DIR = Path("uploads_meta")
 DOWNLOAD_TEMPLATE_PATH = SRC_DIR / "public" / "download.html"
 DOWNLOAD_STYLES_PATH = SRC_DIR / "public" / "download.css"
+MAX_SIZE = 100 * 1024 * 1024  # 100MB
+file_count = "0000" 
 
 # uncomment in production to enable ngrok tunneling
 
@@ -201,7 +204,20 @@ async def generic_exception_handler(request: Request, exc: Exception):
 async def index():
     return RedirectResponse(url="https://ghostdrop.qzz.io/")
 
-MAX_SIZE = 100 * 1024 * 1024  # 100MB
+@app.get("/health")
+async def health_check():
+    
+    cpu_usage = psutil.cpu_percent(interval=1)
+    memory_usage = psutil.virtual_memory().percent
+    uptime = round(time.time() - start_time, 2)
+
+    return {
+        "files_stored": len(list(UPLOAD_DIR.glob("*"))),
+        "cpu_usage": f"{cpu_usage}%",
+        "memory_usage": f"{memory_usage}%",
+        "uptime": f"{uptime} seconds",
+    }
+
 
 @app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
