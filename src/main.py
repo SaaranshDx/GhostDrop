@@ -5,18 +5,20 @@ import logging
 import shutil
 import uuid
 from urllib.parse import quote
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from fastapi import FastAPI, File, Request, HTTPException, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import uvicorn
 import os
+import time
 from dotenv import load_dotenv
 from pyngrok import ngrok
 
 load_dotenv()
 
+start_time = time.time()
 
 def configure_logging() -> logging.Logger:
     log_level_name = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -45,10 +47,12 @@ METADATA_DIR = Path("uploads_meta")
 DOWNLOAD_TEMPLATE_PATH = SRC_DIR / "public" / "download.html"
 DOWNLOAD_STYLES_PATH = SRC_DIR / "public" / "download.css"
 
-ngrok.set_auth_token(os.getenv("NGROK_TOKEN"))
+# uncomment in production to enable ngrok tunneling
 
-tunnel = ngrok.connect(25590, "http")
-logger.info("Ngrok tunnel established at %s", tunnel.public_url)
+#ngrok.set_auth_token(os.getenv("NGROK_TOKEN"))
+
+#tunnel = ngrok.connect(25590, "http")
+#logger.info("Ngrok tunnel established at %s", tunnel.public_url)
 
 
 def metadata_path(file_id: str) -> Path:
@@ -192,9 +196,10 @@ async def generic_exception_handler(request: Request, exc: Exception):
     )
 
 
+
 @app.get("/")
 async def index():
-    return {"Status": "okish"}
+    return RedirectResponse(url="https://ghostdrop.qzz.io/")
 
 MAX_SIZE = 100 * 1024 * 1024  # 100MB
 

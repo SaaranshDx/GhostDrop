@@ -132,7 +132,7 @@
     <div class="ep">
       <div class="ep-head" onclick="toggleEp(this)">
         <span class="method get">GET</span>
-        <span class="ep-path">/{file_id}</span>
+        <span class="ep-path">/files/{file_id}</span>
         <span class="ep-hint">download a file</span>
         <span class="chev">▶</span>
       </div>
@@ -142,7 +142,7 @@
           <thead><tr><th>param</th><th>in</th><th>description</th></tr></thead>
           <tbody><tr><td>file_id</td><td>path</td><td>UUID from POST /upload/</td></tr></tbody>
         </table>
-        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button>curl -O -J <span class="s">"https://link.ghostdrop.qzz.io/{file_id}"</span></div>
+        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button>curl -O -J <span class="s">"https://link.ghostdrop.qzz.io/files/{file_id}"</span></div>
         <div class="code-blk"><span class="spill s200">200</span> binary file stream
 <span class="spill s404">404</span> { <span class="k">"error"</span>: <span class="s">"File not found"</span> }
 <span class="spill s410">410</span> { <span class="k">"error"</span>: <span class="s">"this file is gone"</span> }
