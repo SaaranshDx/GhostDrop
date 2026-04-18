@@ -48,14 +48,18 @@ METADATA_DIR = Path("uploads_meta")
 DOWNLOAD_TEMPLATE_PATH = SRC_DIR / "public" / "download.html"
 DOWNLOAD_STYLES_PATH = SRC_DIR / "public" / "download.css"
 MAX_SIZE = 100 * 1024 * 1024  # 100MB
+service_port = os.getenv("PORT")
+ngrok_status = os.getenv("NGROK_STATUS", "false").lower() == "true"
 file_count = "0000" 
 
-# uncomment in production to enable ngrok tunneling
-
-#ngrok.set_auth_token(os.getenv("NGROK_TOKEN"))
-
-#tunnel = ngrok.connect(25590, "http")
-#logger.info("Ngrok tunnel established at %s", tunnel.public_url)
+def start_ngrok_tunnel():
+    if ngrok_status == True:
+        ngrok.set_auth_token(os.getenv("NGROK_TOKEN"))
+        tunnel = ngrok.connect(service_port, "http")
+        logger.info("Ngrok tunnel established at %s", tunnel.public_url)
+    else:
+        logger.info("Ngrok tunneling is disabled. Running on port %s", service_port)
+        print("server is running without ngrok tunneling")
 
 
 def metadata_path(file_id: str) -> Path:
