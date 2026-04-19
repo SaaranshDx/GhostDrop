@@ -3,10 +3,11 @@ from html import escape
 import json
 import logging
 import shutil
+from typing_extensions import Annotated
 import uuid
 from urllib.parse import quote
 from datetime import datetime, time, timedelta, timezone
-from fastapi import FastAPI, File, Request, HTTPException, UploadFile
+from fastapi import FastAPI, File, Header, Request, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -86,6 +87,7 @@ def write_metadata(file_id: str, original_name: str) -> None:
     metadata = {
         "original_name": original_name,
         "expires_at": (utc_now() + EXPIRY_DURATION).isoformat(),
+        "views": 0,
     }
     metadata_path(file_id).write_text(json.dumps(metadata), encoding="utf-8")
     logger.info("Stored metadata for %s (%s)", file_id, original_name)
@@ -95,7 +97,20 @@ def load_metadata(file_id: str) -> dict | None:
     path = metadata_path(file_id)
     if not path.exists():
         return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    metadata = json.loads(path.read_text(encoding="utf-8"))
+    metadata.setdefault("views", 0)
+    return metadata
+
+
+def save_metadata(file_id: str, metadata: dict) -> None:
+    metadata_path(file_id).write_text(json.dumps(metadata), encoding="utf-8")
+
+
+def increment_views(file_id: str, metadata: dict) -> dict:
+    metadata["views"] = int(metadata.get("views", 0)) + 1
+    save_metadata(file_id, metadata)
+    logger.info("View count for %s is now %s", file_id, metadata["views"])
+    return metadata
 
 
 def is_expired(metadata: dict) -> bool:
@@ -255,6 +270,21 @@ async def download_styles():
 
 @app.get("/{file_id}", response_class=HTMLResponse)
 async def read_items(file_id: str):
+    metadata = load_metadata(file_id)
+    if metadata and is_expired(metadata):
+        logger.info("Landing page requested for expired file %s", file_id)
+        cleanup_file(file_id)
+        return JSONResponse(
+            status_code=410,
+            content={"error": EXPIRED_MESSAGE},
+        )
+
+    file_path = UPLOAD_DIR / file_id
+    if not metadata or not file_path.exists():
+        logger.warning("Landing page requested for missing file %s", file_id)
+        raise HTTPException(status_code=404, detail="File not found")
+
+    increment_views(file_id, metadata)
     logger.info("Rendering download page for %s", file_id)
     return HTMLResponse(content=render_download_page(file_id))
 
@@ -278,6 +308,39 @@ async def get_file(file_id: str):
     logger.info("Serving file %s as %s", file_id, filename)
     return FileResponse(path=file_path, filename=filename)
 
+@app.get("/metadata/{file_id}")
+async def get_metadata(file_id: str):
+    metadata = load_metadata(file_id)
+    if not metadata:
+        logger.warning("Metadata requested for missing file %s", file_id)
+        raise HTTPException(status_code=404, detail="File not found")
+
+    if is_expired(metadata):
+        logger.info("Metadata requested for expired file %s", file_id)
+        cleanup_file(file_id)
+        return JSONResponse(
+            status_code=410,
+            content={"error": EXPIRED_MESSAGE},
+        )
+
+    logger.info("Metadata retrieved for %s", file_id)
+    return {
+        "original_name": metadata["original_name"],
+        "expires_at": metadata["expires_at"],
+        "views": metadata.get("views", 0),
+    }
+
+@app.delete("/delete/{file_id}")
+async def delete_file(file_id: str, password: Annotated[str | None, Header()] = None ):
+
+    if password != os.getenv("DELETE_PASSWORD"):
+        logger.warning("Unauthorized delete attempt for file %s", file_id)
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    else:
+        os.remove(UPLOAD_DIR / file_id)
+        os.remove(metadata_path(file_id))
+        logging.info("Deleted file %s via API", file_id)
+        return {"detail": "File deleted"}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=service_port, reload=True)
