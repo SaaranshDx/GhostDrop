@@ -332,7 +332,7 @@ async def get_metadata(file_id: str):
 
 @app.delete("/delete/{file_id}")
 async def delete_file(file_id: str, password: Annotated[str | None, Header()] = None ):
-
+    
     if password != os.getenv("DELETE_PASSWORD"):
         logger.warning("Unauthorized delete attempt for file %s", file_id)
         raise HTTPException(status_code=401, detail="Unauthorized")

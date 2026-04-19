@@ -20,7 +20,8 @@ async function getApiUrl() {
   return url.trim();
 }
 
-const BASE = await getApiUrl();
+//const BASE = await getApiUrl();
+const BASE = "http://localhost:8000";
 let selectedFile = null, expiryTimer = null;
 
 function setSelectedFile(file) {
@@ -123,7 +124,7 @@ async function removeFile(id, password) {
     const res = await fetch(BASE + '/delete/' + id, {
       method: 'DELETE',
       headers: {
-        'Password': password
+        'password': String(password)
       }
     });
 
@@ -226,4 +227,5 @@ window.onFileSelect = onFileSelect;
 window.fetchFile = fetchFile;
 window.toggleEp = toggleEp;
 window.cc = cc;
+window.removeFile = removeFile;
 
