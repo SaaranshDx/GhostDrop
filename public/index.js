@@ -118,6 +118,26 @@ async function reupload() {
 
 }
 
+async function removeFile(id, password) {
+  try {
+    const res = await fetch(BASE + '/delete/' + id, {
+      method: 'DELETE',
+      headers: {
+        'Password': password
+      }
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.detail || 'Delete failed');
+    }
+
+    toast('File deleted');
+  } catch (e) {
+    toast('error: ' + e.message, true);
+  }
+}
+
 function startExpiry(total) {
   if (expiryTimer) clearInterval(expiryTimer);
   let rem = total;
@@ -206,3 +226,4 @@ window.onFileSelect = onFileSelect;
 window.fetchFile = fetchFile;
 window.toggleEp = toggleEp;
 window.cc = cc;
+
