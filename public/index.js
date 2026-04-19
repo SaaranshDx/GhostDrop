@@ -20,8 +20,7 @@ async function getApiUrl() {
   return url.trim();
 }
 
-//const BASE = await getApiUrl();
-const BASE = "http://localhost:8000";
+const BASE = await getApiUrl();
 let selectedFile = null, expiryTimer = null;
 
 function setSelectedFile(file) {
