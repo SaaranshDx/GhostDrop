@@ -151,6 +151,31 @@
 <span class="spill s500">500</span> { <span class="k">"error"</span>: <span class="s">"Internal server error"</span> }</div>
       </div>
     </div>
+
+    <div class="ep">
+      <div class="ep-head" onclick="toggleEp(this)">
+        <span class="method get">GET</span>
+        <span class="ep-path">/metadata/{file_id}</span>
+        <span class="ep-hint">fetch file metadata</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="ep-body">
+        <p>Fetches metadata for an uploaded file by UUID. Returns the original filename, expiry timestamp, and current view count.</p>
+        <table class="ptbl">
+          <thead><tr><th>param</th><th>in</th><th>description</th></tr></thead>
+          <tbody><tr><td>file_id</td><td>path</td><td>UUID from POST /upload/</td></tr></tbody>
+        </table>
+        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button>curl <span class="s">"https://link.ghostdrop.qzz.io/metadata/{file_id}"</span></div>
+        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button><span class="cm">// 200 OK</span>
+{
+  <span class="k">"original_name"</span>: <span class="s">"example.txt"</span>,
+  <span class="k">"expires_at"</span>: <span class="s">"2026-04-20T18:30:00+00:00"</span>,
+  <span class="k">"views"</span>: <span class="n">3</span>
+}</div>
+        <div class="code-blk"><span class="spill s404">404</span> { <span class="k">"detail"</span>: <span class="s">"File not found"</span> }
+<span class="spill s410">410</span> { <span class="k">"error"</span>: <span class="s">"this file is gone"</span> }</div>
+      </div>
+    </div>
   </div>
 </div>
 
