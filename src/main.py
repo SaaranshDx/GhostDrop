@@ -17,6 +17,9 @@ import time
 from dotenv import load_dotenv
 from pyngrok import ngrok
 import psutil
+import random
+import secrets
+import string
 
 load_dotenv()
 
@@ -116,6 +119,10 @@ def increment_views(file_id: str, metadata: dict) -> dict:
 def is_expired(metadata: dict) -> bool:
     return utc_now() >= datetime.fromisoformat(metadata["expires_at"])
 
+
+def generate_file_id(length: int = 6) -> str:
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
 
 def cleanup_expired_files() -> None:
     deleted_files = 0
@@ -247,7 +254,7 @@ async def upload_file(file: UploadFile = File(...)):
 
     cleanup_expired_files()
 
-    file_id = str(uuid.uuid4())
+    file_id = generate_file_id()
     file_path = UPLOAD_DIR / file_id
 
     with open(file_path, "wb") as buffer:
