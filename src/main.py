@@ -349,5 +349,9 @@ async def delete_file(file_id: str, password: Annotated[str | None, Header()] = 
         logging.info("Deleted file %s via API", file_id)
         return {"detail": "File deleted"}
 
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc):
+    return FileResponse("public/404.html", status_code=404)
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=service_port, reload=True)
