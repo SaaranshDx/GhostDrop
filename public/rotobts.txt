@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Disallow: /files/
+Disallow: /metadata/
+Disallow: /upload/
+
+Sitemap: https://ghostdrop.qzz.io/sitemap.xml

@@ -484,7 +484,14 @@ body.modal-open {
 
 <div class="toast" id="toast"></div>
 
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RBQ1FSXXQG"></script>
+
 <script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'G-RBQ1FSXXQG');
 const RELEASE_POPUP_COOKIE = 'ghostdrop_release_v1_2_beta_seen';
 
 function setReleasePopupCookie(name, value, days) {
