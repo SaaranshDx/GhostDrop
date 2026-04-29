@@ -1,11 +1,7 @@
-document.querySelectorAll(".copy-btn").forEach(btn => {
-  btn.addEventListener("click", (event) => copyLink(event, btn));
-});
-
-document.getElementById("uploadBtn")
-  .addEventListener("click", uploadFile);
-
-let tries = 0
+let tries = 0;
+let BASE = '';
+let selectedFile = null;
+let expiryTimer = null;
 
 async function getApiUrl() {
   const apiUrlProvider = "https://raw.githubusercontent.com/SaaranshDx/GhostDrop/main/serverurl";
@@ -20,10 +16,6 @@ async function getApiUrl() {
   return url.trim();
 }
 
-//const BASE = await getApiUrl();
-const BASE = 'http://localhost:8000';
-let selectedFile = null, expiryTimer = null;
-
 function setSelectedFile(file) {
   if (!file) {
     return;
@@ -31,9 +23,15 @@ function setSelectedFile(file) {
 
   selectedFile = file;
   const pill = document.getElementById('filePill');
+  const uploadBtn = document.getElementById('uploadBtn');
+
+  if (!pill || !uploadBtn) {
+    return;
+  }
+
   pill.style.display = 'block';
   pill.textContent = file.name + '  ·  ' + fmtBytes(file.size);
-  document.getElementById('uploadBtn').disabled = false;
+  uploadBtn.disabled = false;
 }
 
 function showPage(id) {
@@ -69,7 +67,14 @@ function fmtTime(s) {
 async function uploadFile(event) {
   event?.preventDefault();
   if (!selectedFile) return;
+  if (!BASE) {
+    toast('server url not ready yet', true);
+    return;
+  }
   const btn = document.getElementById('uploadBtn');
+  if (!btn) {
+    return;
+  }
   const passwordInput = document.getElementById('uploadPasswordInput');
   const password = passwordInput?.value ?? '';
   btn.disabled = true;
@@ -155,6 +160,9 @@ function startExpiry(total) {
   let rem = total;
   const fill = document.getElementById('expiryFill');
   const lbl = document.getElementById('expiryTime');
+  if (!fill || !lbl) {
+    return;
+  }
   fill.style.width = '100%';
   lbl.textContent = fmtTime(rem);
   expiryTimer = setInterval(() => {
@@ -163,31 +171,6 @@ function startExpiry(total) {
     lbl.textContent = fmtTime(rem);
     if (rem <= 0) clearInterval(expiryTimer);
   }, 1000);
-}
-
-async function fetchFile(event) {
-  event?.preventDefault();
-  const id = document.getElementById('fileIdInput').value.trim();
-  const msg = document.getElementById('fetchMsg');
-  if (!id) { toast('enter a file id'); return; }
-  msg.style.display = 'none';
-  try {
-    const res = await fetch(BASE + '/metadata/' + encodeURIComponent(id), { method: 'GET' });
-    msg.style.display = 'block';
-    if (res.ok) {
-      const data = await res.json();
-      msg.className = 'fetch-msg ok';
-      msg.innerHTML = 'found — <a href="' + BASE + '/' + encodeURIComponent(id) + '" style="color:var(--green)">open download page</a>' + (data.has_password ? ' · password required' : '');
-    } else if (res.status === 410) {
-      msg.className = 'fetch-msg err'; msg.textContent = 'expired — file deleted';
-    } else {
-      msg.className = 'fetch-msg err'; msg.textContent = 'not found (404)';
-    }
-  } catch {
-    msg.style.display = 'block';
-    msg.className = 'fetch-msg err';
-    msg.textContent = 'server unreachable';
-  }
 }
 
 function copyLink(event, btn) {
@@ -214,30 +197,54 @@ function toggleEp(head) {
 
 function toast(msg, err = false) {
   const t = document.getElementById('toast');
+  if (!t) {
+    return;
+  }
   t.textContent = msg;
   t.style.borderColor = err ? 'rgba(255,92,92,0.2)' : 'rgba(255,255,255,0.1)';
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-const dz = document.getElementById('dropZone');
-dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
-dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
-dz.addEventListener('drop', e => {
-  e.preventDefault(); dz.classList.remove('dragover');
-  const f = e.dataTransfer.files[0];
-  setSelectedFile(f);
-});
-
-document.getElementById('fileIdInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') fetchFile();
-});
-
 window.showPage = showPage;
 window.showpage = showPage;
 window.onFileSelect = onFileSelect;
-window.fetchFile = fetchFile;
 window.toggleEp = toggleEp;
 window.cc = cc;
 window.removeFile = removeFile;
+
+async function initializePage() {
+  document.querySelectorAll('.copy-btn').forEach((btn) => {
+    btn.addEventListener('click', (event) => copyLink(event, btn));
+  });
+
+  const uploadBtn = document.getElementById('uploadBtn');
+  if (uploadBtn) {
+    uploadBtn.addEventListener('click', uploadFile);
+  }
+
+  const dz = document.getElementById('dropZone');
+  if (dz) {
+    dz.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dz.classList.add('dragover');
+    });
+    dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+    dz.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dz.classList.remove('dragover');
+      const f = e.dataTransfer.files[0];
+      setSelectedFile(f);
+    });
+  }
+
+  try {
+    BASE = await getApiUrl();
+  } catch (error) {
+    toast('failed to load server url', true);
+    console.error(error);
+  }
+}
+
+initializePage();
 

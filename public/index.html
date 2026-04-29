@@ -286,7 +286,7 @@ body.modal-open {
       </div>
       <div class="file-pill" id="filePill"></div>
       <div class="upload-password">
-        <label class="upload-password-label" for="uploadPasswordInput">optional password</label>
+        <label class="upload-password-label" for="uploadPasswordInput">File password (optional) </label>
         <input type="password" id="uploadPasswordInput" placeholder="set a password for this file">
       </div>
       <button type="button" class="upload-btn" id="uploadBtn" disabled>upload</button>
@@ -305,8 +305,11 @@ body.modal-open {
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
 
-      <!-- API -->
+<!-- API -->
 <div class="page" id="page-api">
   <div class="api-wrap" id="api-wrap" >
     <span class="page-eyebrow">developer</span>
@@ -338,7 +341,7 @@ body.modal-open {
       </div>
       <div class="ep-body">
         <p>Accepts <code>multipart/form-data</code> with a single <code>file</code> field. Returns a UUID and expiry metadata.</p>
-        <p><strong>Warning:</strong> API file uploads are limited to <strong>4.5 MB</strong>. Larger files will be rejected.</p>
+        <p><strong>Warning:</strong> API file uploads are limited to <strong>~4.5 MB</strong>. Larger files will be rejected.</p>
         <table class="ptbl">
           <thead><tr><th>field</th><th>type</th><th>required</th><th>description</th></tr></thead>
           <tbody>
