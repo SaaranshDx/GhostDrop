@@ -285,6 +285,10 @@ body.modal-open {
         <p class="drop-sub">max 100MB  &middot; expires in 6 hours</p>
       </div>
       <div class="file-pill" id="filePill"></div>
+      <div class="upload-password">
+        <label class="upload-password-label" for="uploadPasswordInput">optional password</label>
+        <input type="password" id="uploadPasswordInput" placeholder="set a password for this file">
+      </div>
       <button type="button" class="upload-btn" id="uploadBtn" disabled>upload</button>
 
       <div class="result" id="resultCard">
@@ -349,9 +353,13 @@ body.modal-open {
         <p><strong>Warning:</strong> API file uploads are limited to <strong>4.5 MB</strong>. Larger files will be rejected.</p>
         <table class="ptbl">
           <thead><tr><th>field</th><th>type</th><th>required</th><th>description</th></tr></thead>
-          <tbody><tr><td>file</td><td>file</td><td style="color:var(--green)">yes</td><td>the file to upload</td></tr></tbody>
+          <tbody>
+            <tr><td>file</td><td>file</td><td style="color:var(--green)">yes</td><td>the file to upload</td></tr>
+            <tr><td>password</td><td>header</td><td>no</td><td>optional file password sent as a request header</td></tr>
+          </tbody>
         </table>
         <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button>curl -X POST <span class="s">"https://link.ghostdrop.qzz.io/upload/"</span> \
+  -H <span class="s">"password: my-secret"</span> \
   -F <span class="s">"file=@example.txt"</span></div>
         <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button><span class="cm">// 200 OK</span>
 {
@@ -370,13 +378,18 @@ body.modal-open {
         <span class="chev">▶</span>
       </div>
       <div class="ep-body">
-        <p>Downloads a file by UUID. Serves the original filename. If expired, deletes and returns 410.</p>
+        <p>Downloads a file by UUID. Serves the original filename. If the file is password protected, send the password header or the API returns 401. If expired, deletes and returns 410.</p>
         <table class="ptbl">
           <thead><tr><th>param</th><th>in</th><th>description</th></tr></thead>
-          <tbody><tr><td>file_id</td><td>path</td><td>UUID from POST /upload/</td></tr></tbody>
+          <tbody>
+            <tr><td>file_id</td><td>path</td><td>UUID from POST /upload/</td></tr>
+            <tr><td>password</td><td>header</td><td>required only for protected files</td></tr>
+          </tbody>
         </table>
-        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button>curl -O -J <span class="s">"https://link.ghostdrop.qzz.io/files/{file_id}"</span></div>
+        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button>curl -O -J <span class="s">"https://link.ghostdrop.qzz.io/files/{file_id}"</span> \
+  -H <span class="s">"password: my-secret"</span></div>
         <div class="code-blk"><span class="spill s200">200</span> binary file stream
+<span class="spill s401">401</span> { <span class="k">"error"</span>: <span class="s">"Unauthorized"</span> }
 <span class="spill s404">404</span> { <span class="k">"error"</span>: <span class="s">"File not found"</span> }
 <span class="spill s410">410</span> { <span class="k">"error"</span>: <span class="s">"this file is gone"</span> }
 <span class="spill s500">500</span> { <span class="k">"error"</span>: <span class="s">"Internal server error"</span> }</div>
@@ -391,7 +404,7 @@ body.modal-open {
         <span class="chev">▶</span>
       </div>
       <div class="ep-body">
-        <p>Fetches metadata for an uploaded file by UUID. Returns the original filename, expiry timestamp, and current view count.</p>
+        <p>Fetches metadata for an uploaded file by UUID. Returns the original filename, expiry timestamp, current view count, and whether a password is required.</p>
         <table class="ptbl">
           <thead><tr><th>param</th><th>in</th><th>description</th></tr></thead>
           <tbody><tr><td>file_id</td><td>path</td><td>UUID from POST /upload/</td></tr></tbody>
@@ -401,7 +414,8 @@ body.modal-open {
 {
   <span class="k">"original_name"</span>: <span class="s">"example.txt"</span>,
   <span class="k">"expires_at"</span>: <span class="s">"2026-04-20T18:30:00+00:00"</span>,
-  <span class="k">"views"</span>: <span class="n">3</span>
+  <span class="k">"views"</span>: <span class="n">3</span>,
+  <span class="k">"has_password"</span>: <span class="n">true</span>
 }</div>
         <div class="code-blk"><span class="spill s404">404</span> { <span class="k">"detail"</span>: <span class="s">"File not found"</span> }
 <span class="spill s410">410</span> { <span class="k">"error"</span>: <span class="s">"this file is gone"</span> }</div>

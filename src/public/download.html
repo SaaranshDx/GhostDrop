@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="refresh" content="3; url=/files/__FILE_ID_URL__">
 <title>GhostDrop Download</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -40,28 +39,167 @@
       Download begins in <span id="countdownValue">3</span>s
     </div>
 
+    <div class="download-password hidden" id="passwordBlock">
+      <label class="password-label" for="passwordInput">password required</label>
+      <input class="password-input" id="passwordInput" type="password" placeholder="enter the file password">
+      <p class="password-note">This file is protected. Enter the password to continue.</p>
+    </div>
+
     <div class="download-meta">
       <div class="meta-label">file id</div>
       <div class="meta-value">__FILE_ID__</div>
     </div>
 
-    <a class="download-btn" href="/files/__FILE_ID_URL__">download now</a>
-    <p class="download-note">If nothing happens, use the button above. Expired or missing files will return an error from the backend.</p>
+    <button class="download-btn" id="downloadBtn" type="button">download now</button>
+    <p class="download-status hidden" id="downloadStatus" aria-live="polite"></p>
+    <p class="download-note" id="downloadNote">If nothing happens, use the button above. Expired or missing files will return an error from the backend.</p>
   </section>
 </main>
 
 <script>
+  const fileId = "__FILE_ID__";
+  const fileIdUrl = "__FILE_ID_URL__";
   const countdownNode = document.getElementById("countdownValue");
+  const countdownWrap = document.querySelector(".download-countdown");
+  const downloadBtn = document.getElementById("downloadBtn");
+  const passwordBlock = document.getElementById("passwordBlock");
+  const passwordInput = document.getElementById("passwordInput");
+  const downloadStatus = document.getElementById("downloadStatus");
+  const downloadNote = document.getElementById("downloadNote");
   let remaining = 3;
+  let countdownTimer = null;
+  let metadata = null;
+  let requiresPassword = false;
 
-  const timer = window.setInterval(() => {
-    remaining -= 1;
-    countdownNode.textContent = Math.max(remaining, 0);
+  function setStatus(message, isError = false) {
+    downloadStatus.textContent = message;
+    downloadStatus.classList.remove("hidden", "error");
 
-    if (remaining <= 0) {
-      window.clearInterval(timer);
+    if (isError) {
+      downloadStatus.classList.add("error");
     }
-  }, 1000);
+  }
+
+  function getDownloadFilename(response) {
+    const disposition = response.headers.get("content-disposition") || "";
+    const match = disposition.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i);
+
+    if (match && match[1]) {
+      try {
+        return decodeURIComponent(match[1].replace(/\"/g, "").trim());
+      } catch {
+        return match[1].replace(/\"/g, "").trim();
+      }
+    }
+
+    return metadata?.original_name || fileId;
+  }
+
+  async function triggerDownload() {
+    if (countdownTimer) {
+      window.clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+
+    const headers = new Headers();
+    headers.set("password", passwordInput.value || "");
+
+    downloadBtn.disabled = true;
+    setStatus("Preparing your download...");
+
+    try {
+      const response = await fetch(`/files/${fileIdUrl}`, {
+        method: "GET",
+        headers,
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Download failed";
+
+        try {
+          const payload = await response.json();
+          errorMessage = payload.error || payload.detail || errorMessage;
+        } catch {}
+
+        if (response.status === 401) {
+          errorMessage = "Wrong password. Please try again.";
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = getDownloadFilename(response);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(objectUrl);
+      setStatus("Download started.");
+    } catch (error) {
+      setStatus(error.message || "Download failed", true);
+    } finally {
+      downloadBtn.disabled = false;
+    }
+  }
+
+  async function initDownloadPage() {
+    try {
+      const response = await fetch(`/metadata/${fileIdUrl}`);
+
+      if (!response.ok) {
+        let errorMessage = "Unable to load file metadata";
+
+        try {
+          const payload = await response.json();
+          errorMessage = payload.error || payload.detail || errorMessage;
+        } catch {}
+
+        throw new Error(errorMessage);
+      }
+
+      metadata = await response.json();
+      requiresPassword = Boolean(metadata.has_password);
+      downloadNote.textContent = requiresPassword
+        ? "Enter the password provided by the sender, then start the download."
+        : "If nothing happens, use the button above. Expired or missing files will return an error from the backend.";
+
+      if (requiresPassword) {
+        countdownWrap.classList.add("hidden");
+        passwordBlock.classList.remove("hidden");
+        passwordInput.focus();
+        return;
+      }
+
+      countdownTimer = window.setInterval(() => {
+        remaining -= 1;
+        countdownNode.textContent = Math.max(remaining, 0);
+
+        if (remaining <= 0) {
+          window.clearInterval(countdownTimer);
+          countdownTimer = null;
+          triggerDownload();
+        }
+      }, 1000);
+    } catch (error) {
+      countdownWrap.classList.add("hidden");
+      downloadBtn.disabled = true;
+      setStatus(error.message || "Unable to load file information", true);
+      downloadNote.textContent = "This file may be expired or unavailable.";
+    }
+  }
+
+  downloadBtn.addEventListener("click", triggerDownload);
+  passwordInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      triggerDownload();
+    }
+  });
+
+  initDownloadPage();
 </script>
 </body>
 </html>

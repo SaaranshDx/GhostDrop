@@ -20,10 +20,18 @@ import psutil
 import random
 import secrets
 import string
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 
 load_dotenv()
 
 start_time = time.time()
+
+
+ph = PasswordHasher()
+
+def hash_password(password: str) -> str:
+    return ph.hash(password)
 
 def configure_logging() -> logging.Logger:
     log_level_name = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -86,8 +94,10 @@ def cleanup_file(file_id: str) -> None:
         logger.info("Deleted metadata for %s", file_id)
 
 
-def write_metadata(file_id: str, original_name: str) -> None:
+def write_metadata(file_id: str, original_name: str, password: str | None = None, password_hash: str | None = None) -> None:
     metadata = {
+        "password_hash": password_hash,
+        "has_password": password_hash is not None,
         "original_name": original_name,
         "expires_at": (utc_now() + EXPIRY_DURATION).isoformat(),
         "views": 0,
@@ -246,7 +256,7 @@ async def health_check():
 
 
 @app.post("/upload/")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...), password: Annotated[str | None, Header()] = None):
 
     if file.size > MAX_SIZE:
         logger.warning("Rejected upload for %s: file too large", file.filename)
@@ -260,7 +270,15 @@ async def upload_file(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    write_metadata(file_id, file.filename or file_id)
+    password_hash = None
+    if password:
+        password_hash = hash_password(password)
+
+    write_metadata(
+        file_id,
+        file.filename or file_id,
+        password_hash=password_hash
+    )    
     logger.info("Stored upload %s as %s", file.filename, file_id)
 
     return {
@@ -296,7 +314,7 @@ async def read_items(file_id: str):
     return HTMLResponse(content=render_download_page(file_id))
 
 @app.get("/files/{file_id}")
-async def get_file(file_id: str):
+async def get_file(file_id: str, password: Annotated[str | None, Header()] = None):
     metadata = load_metadata(file_id)
     if metadata and is_expired(metadata):
         logger.info("Download requested for expired file %s", file_id)
@@ -310,6 +328,19 @@ async def get_file(file_id: str):
     if not file_path.exists():
         logger.warning("Download requested for missing file %s", file_id)
         raise HTTPException(status_code=404, detail="File not found")
+
+    if metadata and metadata.get("has_password"):
+        password_hash = metadata.get("password_hash")
+
+        if not password or not password_hash:
+            logger.warning("Unauthorized download attempt for protected file %s", file_id)
+            raise HTTPException(status_code=401, detail="Unauthorized")
+
+        try:
+            ph.verify(password_hash, password)
+        except VerifyMismatchError:
+            logger.warning("Unauthorized download attempt for protected file %s", file_id)
+            raise HTTPException(status_code=401, detail="Unauthorized")
 
     filename = metadata["original_name"] if metadata else file_path.name
     logger.info("Serving file %s as %s", file_id, filename)
@@ -335,6 +366,7 @@ async def get_metadata(file_id: str):
         "original_name": metadata["original_name"],
         "expires_at": metadata["expires_at"],
         "views": metadata.get("views", 0),
+        "has_password": metadata.get("has_password", False),
     }
 
 @app.delete("/delete/{file_id}")

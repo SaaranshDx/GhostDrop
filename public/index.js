@@ -20,7 +20,8 @@ async function getApiUrl() {
   return url.trim();
 }
 
-const BASE = await getApiUrl();
+//const BASE = await getApiUrl();
+const BASE = 'http://localhost:8000';
 let selectedFile = null, expiryTimer = null;
 
 function setSelectedFile(file) {
@@ -69,12 +70,20 @@ async function uploadFile(event) {
   event?.preventDefault();
   if (!selectedFile) return;
   const btn = document.getElementById('uploadBtn');
+  const passwordInput = document.getElementById('uploadPasswordInput');
+  const password = passwordInput?.value ?? '';
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span>uploading…';
   const fd = new FormData();
   fd.append('file', selectedFile);
   try {
-    const res = await fetch(BASE + '/upload/', { method: 'POST', body: fd });
+    const res = await fetch(BASE + '/upload/', {
+      method: 'POST',
+      headers: {
+        password,
+      },
+      body: fd,
+    });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'upload failed');
     const url = 'https://link.ghostdrop.qzz.io' + '/' + data.id;
@@ -85,6 +94,9 @@ async function uploadFile(event) {
     document.getElementById('fileInput').value = '';
     document.getElementById('filePill').style.display = 'none';
     document.getElementById('filePill').textContent = '';
+    if (passwordInput) {
+      passwordInput.value = '';
+    }
     selectedFile = null;
     startExpiry(6 * 3600);
     navigator.clipboard?.writeText(url).catch(() => {});
@@ -160,11 +172,12 @@ async function fetchFile(event) {
   if (!id) { toast('enter a file id'); return; }
   msg.style.display = 'none';
   try {
-    const res = await fetch(BASE + "/" + id, { method: 'GET' });
+    const res = await fetch(BASE + '/metadata/' + encodeURIComponent(id), { method: 'GET' });
     msg.style.display = 'block';
     if (res.ok) {
+      const data = await res.json();
       msg.className = 'fetch-msg ok';
-      msg.innerHTML = 'found — <a href="' + BASE + '/file/' + id + '" style="color:var(--green)" download>download</a>';
+      msg.innerHTML = 'found — <a href="' + BASE + '/' + encodeURIComponent(id) + '" style="color:var(--green)">open download page</a>' + (data.has_password ? ' · password required' : '');
     } else if (res.status === 410) {
       msg.className = 'fetch-msg err'; msg.textContent = 'expired — file deleted';
     } else {
