@@ -197,37 +197,36 @@ body.modal-open {
   <div class="release-popup__card">
     <div class="release-popup__content">
       <span class="release-popup__eyebrow">Release update</span>
-      <h2 id="releasePopupTitle">GhostDrop v1.1 beta</h2>
-      <p class="release-popup__lead" id="releasePopupDescription">This update focuses on improving the frontend experience, API flexibility, and overall reliability of GhostDrop.</p>
+      <h2 id="releasePopupTitle">GhostDrop v1.2 beta</h2>
+      <p class="release-popup__lead" id="releasePopupDescription">This update focuses on tightening access control, improving the file download flow, and cleaning up the frontend experience across GhostDrop.</p>
 
       <div class="release-popup__grid">
         <section class="release-popup__section" aria-labelledby="releaseFeatures">
           <h3 id="releaseFeatures">Features</h3>
           <ul>
-            <li>Added a dedicated download gateway page with a trust warning and automatic redirect.</li>
-            <li>Introduced file metadata support, including view tracking and a metadata endpoint.</li>
-            <li>Added a password-protected file deletion endpoint with initial frontend support.</li>
-            <li>Added a <code>/health</code> endpoint exposing uptime, file count, CPU usage, and memory usage.</li>
-            <li>Introduced optional ngrok tunnel support with configurable enable and disable controls.</li>
+            <li>Added optional password protection for uploaded files, with secure Argon2-based password hashing on the backend.</li>
+            <li>Added password-aware download handling so protected files prompt for a password before download.</li>
+            <li>Added custom 404 pages for missing files across both the public site and backend-served pages.</li>
+            <li>Replaced long UUID-based file links with shorter alphanumeric file IDs for simpler sharing.</li>
           </ul>
         </section>
 
         <section class="release-popup__section" aria-labelledby="releaseImprovements">
           <h3 id="releaseImprovements">Improvements</h3>
           <ul>
-            <li>Refreshed the web UI with a cleaner structure and updated branding.</li>
-            <li>Separated JavaScript and CSS assets for better maintainability.</li>
-            <li>Implemented dynamic API URL resolution to adapt to backend changes.</li>
-            <li>Updated root API behavior to redirect users to the main hosted homepage.</li>
-            <li>Improved API documentation, warnings, and overall project presentation.</li>
+            <li>Expanded the API documentation to cover password-protected uploads and downloads, metadata responses, and authorization failures.</li>
+            <li>Improved the download gateway with clearer status messaging, better protected-file handling, and manual download fallback behavior.</li>
+            <li>Refined the homepage flow by simplifying retrieval behavior and adding optional password input during upload.</li>
+            <li>Updated the homepage warning and release messaging to better communicate current service status and recent changes.</li>
           </ul>
         </section>
 
         <section class="release-popup__section" aria-labelledby="releaseFixes">
           <h3 id="releaseFixes">Fixes</h3>
           <ul>
-            <li>Fixed frontend pathing issues.</li>
-            <li>Resolved dynamic URL handling bugs to improve reliability.</li>
+            <li>Fixed the frontend <code>showPage(id)</code> navigation issue.</li>
+            <li>Fixed mismatched last updated dates between the Privacy Policy and Terms of Service pages.</li>
+            <li>Improved missing-file handling so invalid links now return a proper custom 404 experience.</li>
           </ul>
         </section>
       </div>
@@ -486,7 +485,7 @@ body.modal-open {
 <div class="toast" id="toast"></div>
 
 <script>
-const RELEASE_POPUP_COOKIE = 'ghostdrop_release_v1_1_beta_seen';
+const RELEASE_POPUP_COOKIE = 'ghostdrop_release_v1_2_beta_seen';
 
 function setReleasePopupCookie(name, value, days) {
   const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
