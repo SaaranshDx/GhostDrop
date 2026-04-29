@@ -2,6 +2,7 @@ let tries = 0;
 let BASE = '';
 let selectedFile = null;
 let expiryTimer = null;
+const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
 
 
 async function getApiUrl() {
@@ -18,17 +19,31 @@ async function getApiUrl() {
 }
 
 function setSelectedFile(file) {
-  if (!file) {
-    return;
-  }
-
-  selectedFile = file;
   const pill = document.getElementById('filePill');
   const uploadBtn = document.getElementById('uploadBtn');
 
   if (!pill || !uploadBtn) {
     return;
   }
+
+  if (!file) {
+    selectedFile = null;
+    pill.style.display = 'none';
+    pill.textContent = '';
+    uploadBtn.disabled = true;
+    return;
+  }
+
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    selectedFile = null;
+    pill.style.display = 'none';
+    pill.textContent = '';
+    uploadBtn.disabled = true;
+    toast('file too large (max 100MB)', true);
+    return;
+  }
+
+  selectedFile = file;
 
   pill.style.display = 'block';
   pill.textContent = file.name + '  ·  ' + fmtBytes(file.size);
@@ -68,6 +83,11 @@ function fmtTime(s) {
 async function uploadFile(event) {
   event?.preventDefault();
   if (!selectedFile) return;
+  if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
+    toast('file too large (max 100MB)', true);
+    setSelectedFile(null);
+    return;
+  }
   if (!BASE) {
     toast('server url not ready yet', true);
     return;
@@ -94,8 +114,12 @@ async function uploadFile(event) {
     if (!res.ok) throw new Error(data.error || 'upload failed');
     const url = 'https://link.ghostdrop.qzz.io' + '/' + data.id;
     const urlNode = document.getElementById('res-url');
+    const shareBtn = document.getElementById('shareBtn');
     urlNode.textContent = url;
     urlNode.href = url;
+    if (shareBtn) {
+      shareBtn.disabled = false;
+    }
     document.getElementById('resultCard').style.display = 'block';
     document.getElementById('fileInput').value = '';
     document.getElementById('filePill').style.display = 'none';
@@ -109,7 +133,7 @@ async function uploadFile(event) {
     toast('uploaded — link copied');
 
     if (res.status === 400) {
-      tries + 1;
+      tries += 1;
       reupload();
     }
 
@@ -182,6 +206,31 @@ function copyLink(event, btn) {
   });
 }
 
+async function shareFile(url) {
+  if (!url) {
+    console.info('share skipped: missing file url');
+    return;
+  }
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'GhostDrop file',
+        text: "Here’s your file",
+        url,
+      });
+    } catch (error) {
+      console.info('share cancelled or failed', error);
+    }
+    return;
+  }
+
+  const shareWindow = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!shareWindow) {
+    console.info('share fallback could not open a new tab');
+  }
+}
+
 function cc(btn) {
   const txt = btn.parentElement.innerText.replace(/^copy\n/, '').trim();
   navigator.clipboard?.writeText(txt).then(() => {
@@ -208,9 +257,17 @@ function toast(msg, err = false) {
 }
 
 async function initializePage() {
-  document.querySelectorAll('.copy-btn').forEach((btn) => {
+  document.querySelectorAll('[data-copy-link="true"]').forEach((btn) => {
     btn.addEventListener('click', (event) => copyLink(event, btn));
   });
+
+  const shareBtn = document.getElementById('shareBtn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', () => {
+      const url = document.getElementById('res-url')?.href;
+      shareFile(url);
+    });
+  }
 
   const uploadBtn = document.getElementById('uploadBtn');
   if (uploadBtn) {
