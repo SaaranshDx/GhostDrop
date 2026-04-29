@@ -3,6 +3,7 @@ let BASE = '';
 let selectedFile = null;
 let expiryTimer = null;
 
+
 async function getApiUrl() {
   const apiUrlProvider = "https://raw.githubusercontent.com/SaaranshDx/GhostDrop/main/serverurl";
 
@@ -206,13 +207,6 @@ function toast(msg, err = false) {
   setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-window.showPage = showPage;
-window.showpage = showPage;
-window.onFileSelect = onFileSelect;
-window.toggleEp = toggleEp;
-window.cc = cc;
-window.removeFile = removeFile;
-
 async function initializePage() {
   document.querySelectorAll('.copy-btn').forEach((btn) => {
     btn.addEventListener('click', (event) => copyLink(event, btn));
@@ -248,3 +242,9 @@ async function initializePage() {
 
 initializePage();
 
+window.showPage = showPage;
+window.showpage = showPage;
+window.onFileSelect = onFileSelect;
+window.toggleEp = toggleEp;
+window.cc = cc;
+window.removeFile = removeFile;
