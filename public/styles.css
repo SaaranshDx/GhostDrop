@@ -148,6 +148,13 @@ input[type=text]::placeholder { color: var(--muted); }
   .sidebar { display: none; }
   .prose-content, .api-wrap { padding: 4rem 1.5rem; }
   .status-belt-item { padding: 8px 0; font-size: 9px; }
-  .top-links { top: 46px; right: 16px; }
-  .mobile-link { display: none; }
+  .top-links {
+    top: 46px;
+    left: 16px;
+    right: 16px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .mobile-link { display: flex; }
 }
