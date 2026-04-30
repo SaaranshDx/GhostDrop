@@ -114,12 +114,9 @@ async function uploadFile(event) {
     if (!res.ok) throw new Error(data.error || 'upload failed');
     const url = 'https://link.ghostdrop.qzz.io' + '/' + data.id;
     const urlNode = document.getElementById('res-url');
-    const shareBtn = document.getElementById('shareBtn');
     urlNode.textContent = url;
     urlNode.href = url;
-    if (shareBtn) {
-      shareBtn.disabled = false;
-    }
+    updateShareButtonVisibility();
     document.getElementById('resultCard').style.display = 'block';
     document.getElementById('fileInput').value = '';
     document.getElementById('filePill').style.display = 'none';
@@ -206,13 +203,56 @@ function copyLink(event, btn) {
   });
 }
 
+function getGoNativeShare() {
+  return window.gonative?.share?.sharePage || window.median?.share?.sharePage || null;
+}
+
+function isMobileShareEnvironment() {
+  const ua = navigator.userAgent || '';
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function canShareFile() {
+  return Boolean(getGoNativeShare() || (isMobileShareEnvironment() && typeof navigator.share === 'function'));
+}
+
+function updateShareButtonVisibility() {
+  const shareBtn = document.getElementById('shareBtn');
+  if (!shareBtn) {
+    return;
+  }
+
+  if (!canShareFile()) {
+    shareBtn.style.display = 'none';
+    shareBtn.disabled = true;
+    return;
+  }
+
+  shareBtn.style.display = '';
+  shareBtn.disabled = !document.getElementById('res-url')?.href;
+}
+
 async function shareFile(url) {
   if (!url) {
     console.info('share skipped: missing file url');
     return;
   }
 
-  if (navigator.share) {
+  const goNativeShare = getGoNativeShare();
+  if (goNativeShare) {
+    try {
+      goNativeShare({
+        url,
+        text: "Here’s your file",
+      });
+    } catch (error) {
+      console.info('GoNative share failed', error);
+    }
+    return;
+  }
+
+  if (typeof navigator.share === 'function') {
     try {
       await navigator.share({
         title: 'GhostDrop file',
@@ -225,10 +265,8 @@ async function shareFile(url) {
     return;
   }
 
-  const shareWindow = window.open(url, '_blank', 'noopener,noreferrer');
-  if (!shareWindow) {
-    console.info('share fallback could not open a new tab');
-  }
+  updateShareButtonVisibility();
+  console.info('share unavailable: button hidden');
 }
 
 function cc(btn) {
@@ -257,6 +295,8 @@ function toast(msg, err = false) {
 }
 
 async function initializePage() {
+  updateShareButtonVisibility();
+
   document.querySelectorAll('[data-copy-link="true"]').forEach((btn) => {
     btn.addEventListener('click', (event) => copyLink(event, btn));
   });
@@ -298,6 +338,9 @@ async function initializePage() {
 }
 
 initializePage();
+
+window.median_library_ready = updateShareButtonVisibility;
+window.gonative_library_ready = updateShareButtonVisibility;
 
 window.showPage = showPage;
 window.showpage = showPage;
