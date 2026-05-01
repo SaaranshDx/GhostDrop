@@ -197,42 +197,41 @@ body.modal-open {
   <div class="release-popup__card">
     <div class="release-popup__content">
       <span class="release-popup__eyebrow">Release update</span>
-      <h2 id="releasePopupTitle">GhostDrop v1.2 beta</h2>
-      <p class="release-popup__lead" id="releasePopupDescription">This update focuses on tightening access control, improving the file download flow, and cleaning up the frontend experience across GhostDrop.</p>
+      <h2 id="releasePopupTitle">GhostDrop v1.3 beta</h2>
+      <p class="release-popup__lead" id="releasePopupDescription">This update focuses on improving file sharing capabilities, enhancing the user experience with better navigation controls, and optimizing frontend performance and SEO.</p>
 
       <div class="release-popup__grid">
         <section class="release-popup__section" aria-labelledby="releaseFeatures">
           <h3 id="releaseFeatures">Features</h3>
           <ul>
-            <li>Added optional password protection for uploaded files, with secure Argon2-based password hashing on the backend.</li>
-            <li>Added password-aware download handling so protected files prompt for a password before download.</li>
-            <li>Added custom 404 pages for missing files across both the public site and backend-served pages.</li>
-            <li>Replaced long UUID-based file links with shorter alphanumeric file IDs for simpler sharing.</li>
+            <li>Share Functionality — Added file sharing capabilities with improved share button visibility logic for better user engagement</li>
+            <li>Sidebar Navigation Improvements — Added sidebar drag handle and indicator for improved navigation experience</li>
+            <li>Google Analytics Integration — Added Google Analytics tracking script for better analytics and user behavior tracking</li>
+            <li>SEO Enhancements — Created robots.txt and sitemap.xml files for improved search engine optimization</li>
           </ul>
         </section>
 
         <section class="release-popup__section" aria-labelledby="releaseImprovements">
           <h3 id="releaseImprovements">Improvements</h3>
           <ul>
-            <li>Expanded the API documentation to cover password-protected uploads and downloads, metadata responses, and authorization failures.</li>
-            <li>Improved the download gateway with clearer status messaging, better protected-file handling, and manual download fallback behavior.</li>
-            <li>Refined the homepage flow by simplifying retrieval behavior and adding optional password input during upload.</li>
-            <li>Updated the homepage warning and release messaging to better communicate current service status and recent changes.</li>
+            <li>File Upload Process — Improved file size validation in the upload process for better error handling</li>
+            <li>Frontend Performance — Improved CSS overflow handling for better layout consistency and rendering performance</li>
+            <li>Mobile Experience — Enhanced mobile responsive design to ensure optimal viewing on all devices</li>
           </ul>
         </section>
 
         <section class="release-popup__section" aria-labelledby="releaseFixes">
           <h3 id="releaseFixes">Fixes</h3>
           <ul>
-            <li>Fixed the frontend <code>showPage(id)</code> navigation issue.</li>
-            <li>Fixed mismatched last updated dates between the Privacy Policy and Terms of Service pages.</li>
-            <li>Improved missing-file handling so invalid links now return a proper custom 404 experience.</li>
+            <li>Mobile Download Link Visibility — Fixed download link visibility on mobile devices to ensure proper access</li>
+            <li>API Documentation URLs — Fixed broken API documentation URLs in README and main documentation</li>
+            <li>UI Polish — Added shadow effect to sidebar for enhanced visual appearance and depth perception</li>
           </ul>
         </section>
       </div>
 
       <div class="release-popup__footer">
-        <p class="release-popup__note"></p>
+        <p class="release-popup__note">Note: all mobile apps would be automatically updated</p>
         <button type="button" class="release-popup__button" id="releasePopupDismiss">Okay</button>
       </div>
     </div>
@@ -617,7 +616,7 @@ function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 
 gtag('config', 'G-RBQ1FSXXQG');
-const RELEASE_POPUP_COOKIE = 'ghostdrop_release_v1_2_beta_seen';
+const RELEASE_POPUP_COOKIE = 'ghostdrop_release_v1_3_beta_seen';
 
 function setReleasePopupCookie(name, value, days) {
   const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
