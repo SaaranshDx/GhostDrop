@@ -10,7 +10,7 @@ No accounts. No hassle. Just upload and share.
 
 ## API Documentation
 
-[https://ghostdrop.qzz.io/#api-docs](https://ghostdrop.qzz.io/#api)
+[https://ghostdrop.qzz.io/#api](https://ghostdrop.qzz.io/#api)
 
 ## Features
 

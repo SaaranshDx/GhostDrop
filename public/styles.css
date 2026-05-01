@@ -1,4 +1,5 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html { overflow-x: hidden; }
 :root {
   --bg: #080808;
   --text: #efefef;
@@ -12,7 +13,7 @@
   --sans: 'DM Sans', sans-serif;
   --display: 'Syne', sans-serif;
 }
-body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.65; min-height: 100vh; overflow-y: scroll; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.65; min-height: 100vh; overflow-y: scroll; overflow-x: hidden; }
 
 /* STATUS BELT */
 .status-belt { position: fixed; top: 0; left: 0; width: 100%; z-index: 300; overflow: hidden; border-bottom: 1px solid rgba(200,255,110,0.18); background:
