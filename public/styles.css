@@ -35,7 +35,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 .mobile-link:hover { color: var(--text); }
 
 /* SIDEBAR */
-.sidebar { position: fixed; left: 28px; top: 50%; transform: translateY(-50%); transform-origin: center bottom; z-index: 200; display: flex; flex-direction: column; gap: 2px; padding: 6px; border-radius: 16px; background: rgba(10,10,10,0.78); backdrop-filter: blur(10px); box-shadow: 0 12px 34px rgba(0,0,0,0.22); touch-action: none; user-select: none; }
+.sidebar { position: fixed; left: 28px; top: 50%; transform: translateY(-50%); transform-origin: center bottom; z-index: 200; display: flex; flex-direction: column; gap: 2px; padding: 6px; border-radius: 16px; background: rgba(10,10,10,0.78); backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 12px 34px rgba(0,0,0,0.35), 0 20px 60px rgba(0,0,0,0.25); touch-action: none; user-select: none; }
 .sidebar[data-drag-direction="left"].is-drag-moving { animation: sidebar-drag-left 170ms cubic-bezier(0.22, 1, 0.36, 1) infinite alternate; }
 .sidebar[data-drag-direction="right"].is-drag-moving { animation: sidebar-drag-right 170ms cubic-bezier(0.22, 1, 0.36, 1) infinite alternate; }
 .sidebar[data-drag-direction="left"].is-drag-idle { animation: sidebar-idle-left 180ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
