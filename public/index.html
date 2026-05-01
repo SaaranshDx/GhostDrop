@@ -416,17 +416,137 @@ body.modal-open {
   </div>
 </div>
 
+<!-- CHANGELOG -->
+<div class="page" id="page-changelog">
+  <div class="changelog-wrap">
+    <span class="page-eyebrow">release notes</span>
+    <div class="changelog-header">
+      <div>
+        <h2>Changelog</h2>
+        <p class="changelog-subtitle">All notable changes after <code>v1.2</code> are listed here in reverse chronological order.</p>
+      </div>
+      <span class="changelog-updated">Updated May 1, 2026</span>
+    </div>
+
+    <div class="changelog-list">
+      <section class="changelog-entry">
+        <div class="changelog-entry-head">
+          <div>
+            <h3>Unreleased</h3>
+            <p>Frontend and docs polish currently reflected on the site.</p>
+          </div>
+          <span class="changelog-stamp">In progress</span>
+        </div>
+
+        <div class="changelog-group">
+          <h4>Changed</h4>
+          <ul>
+            <li>Introduced animated page transitions for section changes, with safeguards so the active page does not reanimate when clicked again.</li>
+            <li>Refined desktop nav active-state behavior with a smoother indicator treatment.</li>
+            <li>Reworked the phone nav into a bottom-docked bar and disabled drag-only motion on mobile.</li>
+            <li>Updated the API docs interactions with animated endpoint headers and sliding accordion open and close behavior.</li>
+          </ul>
+        </div>
+
+        <div class="changelog-group">
+          <h4>Fixed</h4>
+          <ul>
+            <li>Fixed highlight clipping and stability issues in the mobile navigation state.</li>
+          </ul>
+        </div>
+
+        <div class="changelog-group">
+          <h4>Docs</h4>
+          <ul>
+            <li>Updated the Terms of Service and Privacy Policy to reflect the current password-protection, metadata, and analytics behavior.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="changelog-entry">
+        <div class="changelog-entry-head">
+          <div>
+            <h3>2026-05-01</h3>
+            <p>Desktop navigation ergonomics update.</p>
+          </div>
+          <span class="changelog-stamp"><code>5657138</code></span>
+        </div>
+
+        <div class="changelog-group">
+          <h4>Added</h4>
+          <ul>
+            <li>Added a draggable desktop nav handle with direction-aware motion and release settling.</li>
+            <li>Added an active-state indicator for sidebar navigation.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="changelog-entry">
+        <div class="changelog-entry-head">
+          <div>
+            <h3>2026-04-30</h3>
+            <p>Sharing improvements and mobile download fix.</p>
+          </div>
+          <span class="changelog-stamp"><code>90ff0f1</code> <code>3a056e2</code></span>
+        </div>
+
+        <div class="changelog-group">
+          <h4>Changed</h4>
+          <ul>
+            <li>Expanded share actions for supported mobile and native environments, with better share button visibility rules.</li>
+          </ul>
+        </div>
+
+        <div class="changelog-group">
+          <h4>Fixed</h4>
+          <ul>
+            <li>Fixed the mobile download link visibility issue.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="changelog-entry">
+        <div class="changelog-entry-head">
+          <div>
+            <h3>2026-04-29</h3>
+            <p>Upload flow hardening and search indexing setup.</p>
+          </div>
+          <span class="changelog-stamp"><code>b7b8d80</code> <code>0b06897</code></span>
+        </div>
+
+        <div class="changelog-group">
+          <h4>Added</h4>
+          <ul>
+            <li>Added Google Analytics to the public landing page.</li>
+            <li>Added <code>sitemap.xml</code> and <code>robots.txt</code> support for search indexing and crawler control.</li>
+          </ul>
+        </div>
+
+        <div class="changelog-group">
+          <h4>Changed</h4>
+          <ul>
+            <li>Improved upload validation around file-size limits and cleaned up the upload result flow.</li>
+            <li>Added share functionality for the upload result flow.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
 <!-- TERMS -->
 <div class="page" id="page-tos">
   <div class="prose-content">
     <span class="page-eyebrow">legal</span>
     <h2>Terms of Service</h2>
-    <p class="prose-lead">By using GhostDrop you agree to these terms. GhostDrop is a minimal ephemeral file-sharing service — no accounts, no persistence beyond 6 hours.</p>
+    <p class="prose-lead">By using GhostDrop you agree to these terms. GhostDrop is a minimal ephemeral file-sharing service with optional password protection and automatic deletion after about 6 hours.</p>
     <h3>1. Acceptance</h3>
     <p>Accessing or using GhostDrop constitutes acceptance of these Terms. If you disagree, do not use the service.</p>
     <h3>2. What the service does</h3>
-    <p>GhostDrop lets you upload files that are automatically deleted after <strong>6 hours</strong>. No accounts are required. Files are accessible to anyone with the generated link.</p>
-    <h3>3. Acceptable use</h3>
+    <p>GhostDrop lets you upload files that are automatically deleted after about <strong>6 hours</strong>. No accounts are required. Each upload receives a short file ID and shareable link, and you may optionally add a password before upload.</p>
+    <h3>3. Access and protection</h3>
+    <p>Anyone with a valid GhostDrop link can attempt to access a file. If you enable password protection, the recipient must provide that password before the file is downloaded. You are responsible for sharing links and passwords carefully.</p>
+    <h3>4. Acceptable use</h3>
     <p>You may not use GhostDrop to upload or share:</p>
     <ul>
       <li>Content that is illegal under applicable law</li>
@@ -436,19 +556,19 @@ body.modal-open {
       <li>Content intended to harass, threaten, or harm any person</li>
       <li>Personal data of others without their consent</li>
     </ul>
-    <h3>4. No guarantees on availability</h3>
-    <p>Files are deleted after approximately 6 hours. <strong>We make no guarantee</strong> of availability within that window. Do not use GhostDrop as a backup or primary storage solution.</p>
-    <h3>5. No warranty</h3>
+    <h3>5. No guarantees on availability or confidentiality</h3>
+    <p>Files are deleted after approximately 6 hours, but <strong>we make no guarantee</strong> that a file will remain available for the full window or that access controls will be perfect. Do not use GhostDrop as a backup, primary storage solution, or sole protection mechanism for highly sensitive data.</p>
+    <h3>6. No warranty</h3>
     <p>GhostDrop is provided <strong>"as is"</strong> without any warranty, express or implied.</p>
-    <h3>6. Limitation of liability</h3>
+    <h3>7. Limitation of liability</h3>
     <p>To the maximum extent permitted by law, GhostDrop and its operators are not liable for any direct, indirect, or consequential damages arising from your use of the service.</p>
-    <h3>7. Termination</h3>
-    <p>We may suspend or terminate access at any time, for any reason, without notice.</p>
-    <h3>8. Changes</h3>
+    <h3>8. Removal and termination</h3>
+    <p>We may delete files, suspend features, or terminate access at any time, including to respond to abuse, security issues, expired files, or operational needs.</p>
+    <h3>9. Changes</h3>
     <p>These Terms may be updated at any time. Continued use after changes are posted constitutes acceptance.</p>
-    <h3>9. Contact</h3>
+    <h3>10. Contact</h3>
     <p>Questions about these Terms can be directed to the project repository.</p>
-    <span class="prose-date">Last updated: 2026 april &middot; GhostDrop Terms of Service</span>
+    <span class="prose-date">Last updated: May 1, 2026 &middot; GhostDrop Terms of Service</span>
   </div>
 </div>
 
@@ -457,30 +577,33 @@ body.modal-open {
   <div class="prose-content">
     <span class="page-eyebrow">legal</span>
     <h2>Privacy Policy</h2>
-    <p class="prose-lead">GhostDrop collects almost nothing. Files and their metadata are deleted automatically after 6 hours.</p>
+    <p class="prose-lead">GhostDrop is designed to collect as little as possible, but it does process uploaded files, temporary metadata, and limited usage data needed to operate the service.</p>
     <h3>What we store temporarily</h3>
-    <p>When you upload a file, GhostDrop holds the file contents (under a randomly generated UUID) and a metadata entry with the original filename and expiry timestamp. Both are <strong>automatically deleted after 6 hours</strong>.</p>
+    <p>When you upload a file, GhostDrop stores the file contents under a short alphanumeric file ID plus metadata such as the original filename, expiry timestamp, view count, and whether the file requires a password. These items are intended to be <strong>automatically deleted after about 6 hours</strong>, or sooner if the file is removed.</p>
+    <h3>Password-protected files</h3>
+    <p>If you set an optional file password, GhostDrop stores a derived Argon2 password hash in metadata so the backend can verify future download attempts. GhostDrop does not need to store the plaintext password after upload.</p>
     <h3>What we do not collect</h3>
     <ul>
       <li>No names, email addresses, or personal identifiers</li>
-      <li>No user accounts or authentication data</li>
-      <li>No analytics or tracking cookies. A small functional cookie may be used to remember that you dismissed release notes.</li>
-      <li>No analytics or behavioural data</li>
+      <li>No user accounts or long-term profile data</li>
+      <li>No plaintext file passwords after upload</li>
       <li>We do not sell or share data with third parties</li>
     </ul>
+    <h3>Cookies and analytics</h3>
+    <p>The public site may use a small functional cookie to remember that you dismissed release notes. The site also currently loads Google Analytics on the public landing page, which may collect standard usage information such as page views, browser or device data, and similar telemetry according to Google's implementation.</p>
     <h3>File access</h3>
-    <p>Files are accessible to anyone with the UUID. <strong>Treat your file ID as a secret.</strong> There are no access controls beyond link knowledge.</p>
+    <p>Files are accessible to anyone with the valid file link or ID. If a file is password protected, that password is also required before download. <strong>Treat both the file link and any password as secrets.</strong></p>
     <h3>Server logs</h3>
-    <p>The server may generate standard HTTP access logs (IP addresses, request paths) during normal operation. These are not persisted beyond the server process lifetime.</p>
+    <p>The server may generate standard HTTP or application logs during normal operation, which can include IP addresses, request paths, status information, and similar technical data. Retention depends on deployment and hosting configuration.</p>
     <h3>Security</h3>
-    <p>Files are not encrypted at rest in the default configuration. Network transport security depends on your deployment setup.</p>
+    <p>Optional file passwords are hashed before storage, but files are not encrypted at rest in the default configuration. Network transport security and log retention depend on your deployment and hosting setup.</p>
     <h3>Children's privacy</h3>
     <p>GhostDrop is not directed at children under 13. We do not knowingly collect information from minors.</p>
     <h3>Changes</h3>
     <p>We may update this policy at any time. The current version is always available here.</p>
     <h3>Contact</h3>
     <p>Questions about this policy can be directed to the project repository.</p>
-    <span class="prose-date">Last updated: 2026 april &middot; GhostDrop Privacy Policy</span>
+    <span class="prose-date">Last updated: May 1, 2026 &middot; GhostDrop Privacy Policy</span>
   </div>
 </div>
 
