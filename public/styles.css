@@ -376,3 +376,6 @@ input[type=text]::placeholder { color: var(--muted); }
   }
   .mobile-link { display: flex; }
 }
+::selection {
+  background-color: #000000; /* Custom highlight color */
+}
