@@ -263,6 +263,7 @@ body.modal-open {
   <button type="button" class="sidebar-drag-handle" id="sidebarDragHandle" aria-label="Drag navigation">::</button>
   <span class="sidebar-indicator" id="sidebarIndicator" aria-hidden="true"></span>
   <a onclick="showPage('main')" class="active" id="snav-main">upload</a>
+  <a onclick="showPage('client')" id="snav-client">client</a>
   <a onclick="showPage('api')" id="snav-api">api</a>
   <a onclick="showPage('tos')" id="snav-tos">terms</a>
   <a onclick="showPage('privacy')" id="snav-privacy">privacy</a>
@@ -412,6 +413,98 @@ body.modal-open {
 <span class="spill s410">410</span> { <span class="k">"error"</span>: <span class="s">"this file is gone"</span> }</div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- CLIENT -->
+<div class="page" id="page-client">
+  <div class="client-wrap">
+    <span class="page-eyebrow">platform</span>
+    <h2>GhostDrop Client</h2>
+    <p class="client-lead">Quick and secure file sharing with GhostDrop. Right-click any file and upload it with optional password protection.</p>
+
+    <!-- Demo Video -->
+    <div class="client-demo">
+      <div class="demo-container">
+        <video controls width="100%" style="border-radius: 14px; border: 1px solid var(--border); background: #000;">
+          <source src="https://raw.githubusercontent.com/SaaranshDx/Ghostclient/main/assets/20260504-1109-30.1792959.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="client-section">
+      <h3>Features</h3>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-lock"></i></div>
+          <h4>Password Protection</h4>
+          <p>Optional password for uploaded files. Leave blank for no protection or set a password to secure your upload.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-copy"></i></div>
+          <h4>Auto-Copy Links</h4>
+          <p>Share links automatically copied to your clipboard. Paste anywhere to share your files instantly.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-bolt"></i></div>
+          <h4>Context Menu Integration</h4>
+          <p>Right-click any file and select "Upload with GhostDrop" for seamless integration with Windows Explorer.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-shield"></i></div>
+          <h4>Privacy & Security</h4>
+          <p>Files uploaded directly to GhostDrop servers with optional password protection. Links expire based on server policy.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Installation Section -->
+    <div class="client-section">
+      <h3>Installation</h3>
+      <p>Quick install with a single PowerShell command. Copy and paste this into PowerShell (as Administrator) and press Enter:</p>
+      
+      <div class="code-blk">
+        <button class="ccopy" onclick="cc(this)">copy</button>
+        <span class="s">iex (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/SaaranshDx/Ghostclient/main/installer.ps1')</span>
+      </div>
+
+      <p style="margin-top: 1rem; font-size: 13px; color: var(--muted);">Or use this alternative if the above doesn't work:</p>
+      <div class="code-blk">
+        <button class="ccopy" onclick="cc(this)">copy</button>
+        <span class="s">Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/SaaranshDx/Ghostclient/main/installer.ps1' -UseBasicParsing | Invoke-Expression</span>
+      </div>
+
+      <p style="margin-top: 1.5rem; font-size: 12px; color: var(--muted);">
+        <strong>Execution Policy Error?</strong> If you get an execution policy error, run:<br>
+        <code style="background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 4px;">Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</code>
+      </p>
+
+      <h4 style="font-family: var(--display); font-size: 13px; font-weight: 700; color: var(--text); margin-top: 1.8rem; margin-bottom: 0.8rem;">After Installation</h4>
+      <ul class="integration-list">
+        <li><i class="fa-solid fa-mouse"></i> Right-click any file → "Upload with GhostDrop"</li>
+        <li><i class="fa-solid fa-upload"></i> Files are uploaded securely to GhostDrop servers</li>
+        <li><i class="fa-solid fa-link"></i> Instant link generation and clipboard copy</li>
+        <li><i class="fa-solid fa-file"></i> Works with files of any type and size (up to your system limits)</li>
+      </ul>
+
+      <h4 style="font-family: var(--display); font-size: 13px; font-weight: 700; color: var(--text); margin-top: 1.8rem; margin-bottom: 0.8rem;">Support & Feedback</h4>
+      <p style="font-size: 13px; color: var(--muted); margin-bottom: 1rem;">For issues, feature requests, or questions, please visit:</p>
+      <div class="client-links">
+        <a href="https://github.com/SaaranshDx/Ghostclient/issues" target="_blank" rel="noopener" class="client-link-btn">
+          <i class="fa-brands fa-github" aria-hidden="true"></i>
+          GitHub Issues
+        </a>
+        <a href="https://github.com/SaaranshDx/GhostDrop" target="_blank" rel="noopener" class="client-link-btn">
+          <i class="fa-brands fa-github" aria-hidden="true"></i>
+          Main Project
+        </a>
+      </div>
+    </div>
+
+    <!-- CHANGELOG -->
+    <span style="margin-top: 3rem; display: block;"></span>
   </div>
 </div>
 
@@ -677,6 +770,11 @@ document.addEventListener('keydown', (event) => {
 });
 
 showReleasePopup();
+
+function rdclient() {
+  showPage('client');
+}
+
 </script>
 <script type="module" src="index.js" defer></script>
 </body>

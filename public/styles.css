@@ -375,7 +375,61 @@ input[type=text]::placeholder { color: var(--muted); }
     gap: 10px;
   }
   .mobile-link { display: flex; }
+  .client-wrap { padding: 4rem 1.5rem 7rem; }
 }
+
+/* CLIENT PAGE */
+.client-wrap { max-width: 580px; margin: 0 auto; padding: 6rem 2rem 6rem 120px; }
+.client-wrap h2 { font-family: var(--display); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.6px; margin-bottom: 0.4rem; }
+.client-lead { color: var(--muted); font-size: 13px; line-height: 1.75; margin-bottom: 1.8rem; }
+.client-section { margin-top: 2.5rem; }
+.client-section h3 { font-family: var(--display); font-size: 13px; font-weight: 700; color: var(--text); margin: 0 0 1rem; letter-spacing: -0.2px; }
+.client-section p { color: var(--muted); font-size: 13px; line-height: 1.75; margin-bottom: 1rem; }
+.client-section p strong { color: var(--text); font-weight: 500; }
+
+/* DEMO VIDEO */
+.client-demo { margin: 2rem 0; }
+.demo-container { position: relative; width: 100%; background: #000; }
+
+/* FEATURES GRID */
+.features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; }
+.feature-card { border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; background: rgba(255,255,255,0.02); transition: all 0.2s; }
+.feature-card:hover { background: rgba(255,255,255,0.04); border-color: var(--border2); }
+.feature-icon { font-size: 28px; margin-bottom: 0.8rem; display: block; color: var(--green); }
+.feature-card h4 { font-family: var(--display); font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+.feature-card p { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 0; }
+
+/* CODE BLOCKS */
+.code-blk { position: relative; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1rem 0; font-family: var(--mono); font-size: 11px; color: #a0a0a0; overflow-x: auto; line-height: 1.6; }
+.code-blk .s { color: #c8ff6e; }
+.code-blk .k { color: #888; }
+.code-blk .n { color: #888; }
+.code-blk .cm { color: #555; }
+.ccopy { position: absolute; top: 8px; right: 8px; border: none; background: rgba(200,255,110,0.1); color: var(--green); font-size: 10px; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-family: var(--mono); transition: background 0.2s; }
+.ccopy:hover { background: rgba(200,255,110,0.2); }
+
+/* USAGE STEPS */
+.usage-steps { list-style: none; padding: 0; counter-reset: step; }
+.usage-steps li { counter-increment: step; margin-bottom: 1.5rem; padding-left: 2.5rem; position: relative; color: var(--muted); font-size: 13px; line-height: 1.75; }
+.usage-steps li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 24px; height: 24px; background: var(--green); color: #080808; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 700; font-size: 12px; }
+.usage-steps strong { color: var(--text); font-weight: 600; display: block; margin-bottom: 0.3rem; }
+
+/* INTEGRATION LIST */
+.integration-list { list-style: none; padding: 0; margin-top: 1rem; }
+.integration-list li { color: var(--muted); font-size: 13px; line-height: 1.65; padding: 6px 0 6px 28px; position: relative; }
+.integration-list li i { position: absolute; left: 0; color: var(--green); font-size: 13px; width: 20px; text-align: center; }
+
+/* CLIENT FOOTER */
+.client-footer { border-top: 1px solid var(--border); padding-top: 2rem; margin-top: 3rem; }
+.client-links { display: flex; gap: 1rem; margin-top: 1.2rem; flex-wrap: wrap; }
+.client-link-btn { display: inline-flex; align-items: center; gap: 8px; padding: 0.8rem 1.2rem; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.02); color: var(--text); text-decoration: none; font-size: 12px; font-family: var(--sans); transition: all 0.2s; }
+.client-link-btn:hover { background: rgba(200,255,110,0.1); border-color: var(--green); color: var(--green); }
+.client-link-btn i { font-size: 14px; }
+
+@media (max-width: 720px) {
+  .features-grid { grid-template-columns: 1fr; }
+}
+
 ::selection {
   background-color: #000000; /* Custom highlight color */
 }
