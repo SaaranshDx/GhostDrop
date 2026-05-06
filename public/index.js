@@ -15,7 +15,10 @@ const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 const SIDEBAR_SETTLE_VELOCITY_THRESHOLD = 0.55;
 const mobileNavQuery = window.matchMedia('(max-width: 600px)');
 const DEBUG_UI_ENABLED = window.GHOSTDROP_DEBUG_UI === true;
-
+// app or browser check
+const isApp =
+  navigator.userAgent.toLowerCase().includes("median");
+  
 function logFrontend(eventName, detail) {
   if (!DEBUG_UI_ENABLED) {
     return;
