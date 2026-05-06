@@ -14,18 +14,35 @@ const PAGE_TRANSITION_MS = 220;
 const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 const SIDEBAR_SETTLE_VELOCITY_THRESHOLD = 0.55;
 const mobileNavQuery = window.matchMedia('(max-width: 600px)');
+const DEBUG_UI_ENABLED = window.GHOSTDROP_DEBUG_UI === true;
+
+function logFrontend(eventName, detail) {
+  if (!DEBUG_UI_ENABLED) {
+    return;
+  }
+
+  if (detail === undefined) {
+    console.info('[frontend]', eventName);
+    return;
+  }
+
+  console.info('[frontend]', eventName, detail);
+}
 
 
 async function getApiUrl() {
   const apiUrlProvider = "https://raw.githubusercontent.com/SaaranshDx/GhostDrop/main/serverurl";
+  logFrontend('api-url:request', { source: apiUrlProvider });
 
   const res = await fetch(apiUrlProvider);
 
   if (!res.ok) {
+    logFrontend('api-url:failed', { status: res.status, statusText: res.statusText });
     throw new Error("failed to fetch");
   }
 
   const url = await res.text();
+  logFrontend('api-url:ready', { url: url.trim() });
   return url.trim();
 }
 
@@ -42,6 +59,7 @@ function setSelectedFile(file) {
     pill.style.display = 'none';
     pill.textContent = '';
     uploadBtn.disabled = true;
+    logFrontend('file:cleared');
     return;
   }
 
@@ -51,6 +69,7 @@ function setSelectedFile(file) {
     pill.textContent = '';
     uploadBtn.disabled = true;
     toast('file too large (max 100MB)', true);
+    logFrontend('file:rejected', { name: file.name, size: file.size, reason: 'too-large' });
     return;
   }
 
@@ -59,6 +78,7 @@ function setSelectedFile(file) {
   pill.style.display = 'block';
   pill.textContent = file.name + '  ·  ' + fmtBytes(file.size);
   uploadBtn.disabled = false;
+  logFrontend('file:selected', { name: file.name, size: file.size, type: file.type || 'unknown' });
 }
 
 function normalizePageId(id) {
@@ -247,6 +267,7 @@ function setupSidebarDrag() {
     setSidebarIdleActive(false);
     setSidebarDragDirection(1);
     setSidebarPosition(rect.left, rect.top);
+    logFrontend('sidebar:drag-start', { left: rect.left, top: rect.top });
     handle.setPointerCapture(event.pointerId);
     event.preventDefault();
   });
@@ -301,6 +322,7 @@ function setupSidebarDrag() {
     setSidebarIdleActive(false);
     sidebar.classList.remove('is-dragging');
     triggerSidebarSettle(releaseVelocityX);
+    logFrontend('sidebar:drag-end', { velocityX: releaseVelocityX });
     if (handle.hasPointerCapture(event.pointerId)) {
       handle.releasePointerCapture(event.pointerId);
     }
@@ -337,6 +359,7 @@ function activatePage(id, direction, animate = true) {
   pendingPageId = null;
   setActiveSidebarLink(id, animate);
   window.scrollTo(0, 0);
+  logFrontend('page:activated', { id, direction, animate });
 }
 
 function getPageIdFromHash() {
@@ -347,6 +370,7 @@ function showPage(id, options = {}) {
   const { updateHash = true, immediate = false } = options;
   const nextId = normalizePageId(id);
   const nextPage = document.getElementById('page-' + nextId);
+  const previousPageId = currentPageId;
   if (!nextPage) {
     return;
   }
@@ -365,6 +389,7 @@ function showPage(id, options = {}) {
     if (updateHash && window.location.hash !== '#' + nextId) {
       window.location.hash = nextId;
     }
+    logFrontend('page:noop', { id: nextId });
     return;
   }
 
@@ -392,10 +417,19 @@ function showPage(id, options = {}) {
   if (updateHash && window.location.hash !== '#' + nextId) {
     window.location.hash = nextId;
   }
+
+  logFrontend('page:transition', {
+    from: previousPageId,
+    to: nextId,
+    immediate,
+    animate: shouldAnimate,
+    updateHash,
+  });
 }
 
 function onFileSelect() {
   const f = document.getElementById('fileInput').files[0];
+  logFrontend('file:input-change', { hasFile: Boolean(f) });
   setSelectedFile(f);
 }
 
@@ -417,14 +451,20 @@ function fmtTime(s) {
 
 async function uploadFile(event) {
   event?.preventDefault();
-  if (!selectedFile) return;
+  if (!selectedFile) {
+    logFrontend('upload:skipped', { reason: 'no-file' });
+    return;
+  }
   if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
+    const oversizedFile = selectedFile;
     toast('file too large (max 100MB)', true);
     setSelectedFile(null);
+    logFrontend('upload:blocked', { reason: 'too-large', size: oversizedFile.size, name: oversizedFile.name });
     return;
   }
   if (!BASE) {
     toast('server url not ready yet', true);
+    logFrontend('upload:blocked', { reason: 'base-url-missing' });
     return;
   }
   const btn = document.getElementById('uploadBtn');
@@ -437,6 +477,11 @@ async function uploadFile(event) {
   btn.innerHTML = '<span class="spin"></span>uploading…';
   const fd = new FormData();
   fd.append('file', selectedFile);
+  logFrontend('upload:start', {
+    name: selectedFile.name,
+    size: selectedFile.size,
+    hasPassword: Boolean(password),
+  });
   try {
     const res = await fetch(BASE + '/upload/', {
       method: 'POST',
@@ -463,21 +508,31 @@ async function uploadFile(event) {
     startExpiry(6 * 3600);
     navigator.clipboard?.writeText(url).catch(() => {});
     toast('uploaded — link copied');
+    logFrontend('upload:success', {
+      id: data.id,
+      status: res.status,
+      originalName: data.original_name,
+      expiresInHours: data.expires_in_hours,
+    });
 
     if (res.status === 400) {
       tries += 1;
+      logFrontend('upload:retry-requested', { tries });
       reupload();
     }
 
     if (res.status === 413) {
       toast('file too large (max 100MB)', true);
+      logFrontend('upload:server-rejected', { status: res.status });
     }
 
   } catch(e) {
     toast('error: ' + e.message, true);
+    logFrontend('upload:error', { message: e.message });
   } finally {
     btn.disabled = !selectedFile;
     btn.textContent = 'upload';
+    logFrontend('upload:complete', { pendingFile: Boolean(selectedFile) });
   }
 }
 
@@ -485,14 +540,17 @@ async function reupload() {
   if (tries >= 3) {
     toast('upload failed after multiple attempts', true);
     tries = 0;
+    logFrontend('upload:retry-aborted');
     return;
   }
 
+  logFrontend('upload:retry', { tries });
   await uploadFile();
 
 }
 
 async function removeFile(id, password) {
+  logFrontend('delete:start', { id, hasPassword: Boolean(password) });
   try {
     const res = await fetch(BASE + '/delete/' + id, {
       method: 'DELETE',
@@ -507,8 +565,10 @@ async function removeFile(id, password) {
     }
 
     toast('File deleted');
+    logFrontend('delete:success', { id });
   } catch (e) {
     toast('error: ' + e.message, true);
+    logFrontend('delete:error', { id, message: e.message });
   }
 }
 
@@ -522,19 +582,25 @@ function startExpiry(total) {
   }
   fill.style.width = '100%';
   lbl.textContent = fmtTime(rem);
+  logFrontend('expiry:start', { totalSeconds: total });
   expiryTimer = setInterval(() => {
     rem--;
     fill.style.width = Math.max(0, rem / total * 100) + '%';
     lbl.textContent = fmtTime(rem);
-    if (rem <= 0) clearInterval(expiryTimer);
+    if (rem <= 0) {
+      clearInterval(expiryTimer);
+      logFrontend('expiry:ended');
+    }
   }, 1000);
 }
 
 function copyLink(event, btn) {
   event?.preventDefault();
   const text = document.getElementById('res-url').href;
+  logFrontend('clipboard:copy-link', { text });
   navigator.clipboard?.writeText(text).then(() => {
     btn.textContent = 'copied'; setTimeout(() => btn.textContent = 'copy', 1400);
+    logFrontend('clipboard:copy-link-success');
   });
 }
 
@@ -566,6 +632,10 @@ function updateShareButtonVisibility() {
 
   shareBtn.style.display = '';
   shareBtn.disabled = !document.getElementById('res-url')?.href;
+  logFrontend('share:button-state', {
+    visible: true,
+    disabled: shareBtn.disabled,
+  });
 }
 
 async function shareFile(url) {
@@ -577,25 +647,31 @@ async function shareFile(url) {
   const goNativeShare = getGoNativeShare();
   if (goNativeShare) {
     try {
+      logFrontend('share:native-start', { provider: 'gonative', url });
       goNativeShare({
         url,
         text: "Here’s your file",
       });
+      logFrontend('share:native-success', { provider: 'gonative' });
     } catch (error) {
       console.info('GoNative share failed', error);
+      logFrontend('share:native-failed', { provider: 'gonative', message: error.message });
     }
     return;
   }
 
   if (typeof navigator.share === 'function') {
     try {
+      logFrontend('share:native-start', { provider: 'web-share', url });
       await navigator.share({
         title: 'GhostDrop file',
         text: "Here’s your file",
         url,
       });
+      logFrontend('share:native-success', { provider: 'web-share' });
     } catch (error) {
       console.info('share cancelled or failed', error);
+      logFrontend('share:native-failed', { provider: 'web-share', message: error.message });
     }
     return;
   }
@@ -615,6 +691,10 @@ function toggleEp(head) {
   const body = head.nextElementSibling;
   const chev = head.querySelector('.chev');
   const open = !body.classList.contains('open');
+  logFrontend('accordion:toggle', {
+    path: head.querySelector('.ep-path')?.textContent?.trim() || 'unknown',
+    open,
+  });
 
   if (body._epTransitionCleanup) {
     body.removeEventListener('transitionend', body._epTransitionCleanup);
@@ -666,6 +746,7 @@ function toast(msg, err = false) {
   if (!t) {
     return;
   }
+  logFrontend('toast', { message: msg, error: err });
   t.textContent = msg;
   t.style.borderColor = err ? 'rgba(255,92,92,0.2)' : 'rgba(255,255,255,0.1)';
   t.classList.add('show');
@@ -673,6 +754,7 @@ function toast(msg, err = false) {
 }
 
 async function initializePage() {
+  logFrontend('init:start');
   currentPageId = normalizePageId(document.querySelector('.page.active')?.id?.replace('page-', ''));
   showPage(getPageIdFromHash(), { updateHash: false, immediate: true });
   setupSidebarDrag();
@@ -710,22 +792,28 @@ async function initializePage() {
       e.preventDefault();
       dz.classList.remove('dragover');
       const f = e.dataTransfer.files[0];
+      logFrontend('dropzone:drop', { hasFile: Boolean(f) });
       setSelectedFile(f);
     });
   }
 
   try {
     BASE = await getApiUrl();
+    logFrontend('init:base-ready', { base: BASE });
   } catch (error) {
     toast('failed to load server url', true);
     console.error(error);
+    logFrontend('init:base-failed', { message: error.message });
   }
+
+  logFrontend('init:complete');
 }
 
 initializePage();
 
 window.addEventListener('hashchange', () => {
   const nextId = getPageIdFromHash();
+  logFrontend('hashchange', { nextId, currentPageId, pendingPageId });
   if (nextId === currentPageId || nextId === pendingPageId) {
     return;
   }
@@ -734,6 +822,11 @@ window.addEventListener('hashchange', () => {
 });
 
 window.addEventListener('resize', () => {
+  logFrontend('resize', {
+    width: window.innerWidth,
+    height: window.innerHeight,
+    mobileLayout: isMobileNavLayout(),
+  });
   if (isMobileNavLayout()) {
     resetSidebarForMobile();
   }

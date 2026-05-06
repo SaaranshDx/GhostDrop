@@ -7,6 +7,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link rel="stylesheet" href="styles.css">
+<script>
+window.GHOSTDROP_DEBUG_UI = window.GHOSTDROP_DEBUG_UI ?? (
+  window.location.search.includes('debug=true')
+  || window.localStorage?.getItem('ghostdrop:debug-ui') === 'true'
+);
+</script>
+<script src="debug.js"></script>
 <style>
 body.modal-open {
   overflow: hidden;
@@ -735,6 +742,10 @@ function hideReleasePopup(remember = false) {
     return;
   }
 
+  if (window.GHOSTDROP_DEBUG_UI === true) {
+    console.info('[release-popup] hide', { remember });
+  }
+
   popup.classList.remove('is-visible');
   document.body.classList.remove('modal-open');
 
@@ -746,7 +757,17 @@ function hideReleasePopup(remember = false) {
 function showReleasePopup() {
   const popup = document.getElementById('releasePopup');
   if (!popup || getReleasePopupCookie(RELEASE_POPUP_COOKIE) === 'true') {
+    if (window.GHOSTDROP_DEBUG_UI === true) {
+      console.info('[release-popup] skipped', {
+        popupPresent: Boolean(popup),
+        alreadySeen: getReleasePopupCookie(RELEASE_POPUP_COOKIE) === 'true',
+      });
+    }
     return;
+  }
+
+  if (window.GHOSTDROP_DEBUG_UI === true) {
+    console.info('[release-popup] show');
   }
 
   popup.classList.add('is-visible');
@@ -772,6 +793,9 @@ document.addEventListener('keydown', (event) => {
 showReleasePopup();
 
 function rdclient() {
+  if (window.GHOSTDROP_DEBUG_UI === true) {
+    console.info('[nav] redirecting to client page');
+  }
   showPage('client');
 }
 
