@@ -12,6 +12,7 @@ let sidebarDragState = null;
 let sidebarSettleCleanup = null;
 let sidebarMotionIdleTimer = null;
 let activeNfcAbortController = null;
+let sharePopup = null;
 const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
 const PAGE_IDS = ['main', 'client', 'api', 'changelog', 'tos', 'privacy'];
 const PAGE_TRANSITION_MS = 220;
@@ -814,6 +815,7 @@ async function uploadFile(event) {
       passwordInput.value = '';
     }
     selectedFile = null;
+    shareFile(url);
     startExpiry(6 * 3600);
     navigator.clipboard?.writeText(url).catch(() => {});
     toast('uploaded — link copied');
@@ -922,7 +924,7 @@ function isMobileShareEnvironment() {
 }
 
 function canShareFile() {
-  return Boolean(getGoNativeShare() || (isMobileShareEnvironment() && typeof navigator.share === 'function'));
+  return true;
 }
 
 function updateShareButtonVisibility() {
@@ -945,11 +947,214 @@ function updateShareButtonVisibility() {
   });
 }
 
-async function shareFile(url) {
+function getShareQrImageUrl(url) {
+  return 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=0&data=' + encodeURIComponent(url);
+}
+
+function hideSharePopup() {
+  if (!sharePopup) {
+    return;
+  }
+
+  sharePopup.classList.remove('is-visible');
+  document.body.classList.remove('modal-open');
+}
+
+function ensureSharePopup() {
+  if (sharePopup) {
+    return sharePopup;
+  }
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .share-popup {
+      position: fixed;
+      inset: 0;
+      z-index: 1400;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(8, 8, 8, 0.82);
+      backdrop-filter: blur(14px);
+    }
+
+    .share-popup.is-visible {
+      display: flex;
+    }
+
+    .share-popup__card {
+      width: min(100%, 420px);
+      border: 1px solid var(--border2);
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at top right, rgba(200,255,110,0.14), transparent 32%),
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)),
+        #0a0a0a;
+      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+    }
+
+    .share-popup__content {
+      padding: 1.4rem;
+      text-align: center;
+    }
+
+    .share-popup__eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-bottom: 0.75rem;
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    .share-popup__eyebrow::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 12px rgba(200,255,110,0.45);
+    }
+
+    .share-popup__title {
+      margin: 0 0 0.6rem;
+      color: var(--text);
+      font-family: var(--display);
+      font-size: clamp(1.7rem, 5vw, 2.2rem);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+    }
+
+    .share-popup__lead {
+      margin: 0 0 1.15rem;
+      color: rgba(239,239,239,0.82);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .share-popup__qr-shell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .share-popup__qr {
+      width: min(100%, 280px);
+      aspect-ratio: 1;
+      display: block;
+      border-radius: 12px;
+      background: #fff;
+      object-fit: contain;
+    }
+
+    .share-popup__link {
+      display: block;
+      margin: 0 0 1rem;
+      color: rgba(239,239,239,0.72);
+      font-size: 12px;
+      line-height: 1.5;
+      word-break: break-all;
+      text-decoration: none;
+    }
+
+    .share-popup__actions {
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .share-popup__button {
+      width: 100%;
+      padding: 0.95rem 1rem;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+    }
+
+    .share-popup__button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .share-popup__button--primary {
+      background: var(--green);
+      color: #070707;
+    }
+
+    .share-popup__button--secondary {
+      background: rgba(255,255,255,0.04);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .share-popup__button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  `;
+  document.head.appendChild(style);
+
+  const popup = document.createElement('div');
+  popup.className = 'share-popup';
+  popup.id = 'sharePopup';
+  popup.setAttribute('role', 'dialog');
+  popup.setAttribute('aria-modal', 'true');
+  popup.setAttribute('aria-labelledby', 'sharePopupTitle');
+  popup.innerHTML = `
+    <div class="share-popup__card">
+      <div class="share-popup__content">
+        <span class="share-popup__eyebrow">Share file</span>
+        <h2 class="share-popup__title" id="sharePopupTitle">Scan to open</h2>
+        <p class="share-popup__lead">Scan this QR code on another device, or use the app share drawer below.</p>
+        <div class="share-popup__qr-shell">
+          <img class="share-popup__qr" id="sharePopupQr" alt="QR code for shared file link">
+        </div>
+        <a class="share-popup__link" id="sharePopupLink" target="_blank" rel="noopener"></a>
+        <div class="share-popup__actions">
+          <button type="button" class="share-popup__button share-popup__button--primary" id="sharePopupNativeBtn">share via other apps</button>
+          <button type="button" class="share-popup__button share-popup__button--secondary" id="sharePopupCloseBtn">close</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  popup.addEventListener('click', (event) => {
+    if (event.target === popup) {
+      hideSharePopup();
+    }
+  });
+
+  popup.querySelector('#sharePopupCloseBtn')?.addEventListener('click', hideSharePopup);
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && popup.classList.contains('is-visible')) {
+      hideSharePopup();
+    }
+  });
+
+  document.body.appendChild(popup);
+  sharePopup = popup;
+  return popup;
+}
+
+async function shareFileViaOtherApps(url) {
   if (!url) {
     console.info('share skipped: missing file url');
     return;
   }
+
+  hideSharePopup();
 
   const goNativeShare = getGoNativeShare();
   if (goNativeShare) {
@@ -984,7 +1189,36 @@ async function shareFile(url) {
   }
 
   updateShareButtonVisibility();
-  console.info('share unavailable: button hidden');
+  console.info('share unavailable: no native share provider');
+}
+
+function showSharePopup(url) {
+  const popup = ensureSharePopup();
+  const qrNode = popup.querySelector('#sharePopupQr');
+  const linkNode = popup.querySelector('#sharePopupLink');
+  const nativeShareBtn = popup.querySelector('#sharePopupNativeBtn');
+
+  qrNode.src = getShareQrImageUrl(url);
+  linkNode.href = url;
+  linkNode.textContent = url;
+  nativeShareBtn.disabled = !getGoNativeShare() && typeof navigator.share !== 'function';
+  nativeShareBtn.onclick = () => shareFileViaOtherApps(url);
+
+  popup.classList.add('is-visible');
+  document.body.classList.add('modal-open');
+  logFrontend('share:popup-open', {
+    url,
+    nativeShareAvailable: !nativeShareBtn.disabled,
+  });
+}
+
+async function shareFile(url) {
+  if (!url) {
+    console.info('share skipped: missing file url');
+    return;
+  }
+
+  showSharePopup(url);
 }
 
 function cc(btn) {
