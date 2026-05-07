@@ -19,6 +19,7 @@ const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 const SIDEBAR_SETTLE_VELOCITY_THRESHOLD = 0.55;
 const mobileViewportQuery = window.matchMedia('(max-width: 600px)');
 const DEBUG_UI_ENABLED = window.GHOSTDROP_DEBUG_UI === true;
+const NFC_FUNCTIONALITY_HIDDEN = true; // set to true to hide NFC feature i would revisit it later turst me
 const GHOSTDROP_PUBLIC_FILE_BASE = 'https://link.ghostdrop.qzz.io';
 const GHOSTDROP_APP_FILE_BASE = window.GHOSTDROP_APP_FILE_BASE || GHOSTDROP_PUBLIC_FILE_BASE;
 const isApp = navigator.userAgent.toLowerCase().includes('median');
@@ -56,6 +57,10 @@ async function getApiUrl() {
 }
 
 function isNfcSupported() {
+  if (NFC_FUNCTIONALITY_HIDDEN) {
+    return false;
+  }
+
   return typeof window.NDEFReader === 'function';
 }
 
@@ -140,6 +145,7 @@ function stopNfcSession() {
 function updateNfcControls() {
   const shareBtn = document.getElementById('nfcShareBtn');
   const receiveBtn = document.getElementById('nfcReceiveBtn');
+  const toastNode = document.getElementById('nfctoast');
   const nfcAvailable = canUseNfc();
 
   if (shareBtn) {
@@ -150,6 +156,15 @@ function updateNfcControls() {
   if (receiveBtn) {
     receiveBtn.hidden = !nfcAvailable;
     receiveBtn.disabled = !nfcAvailable;
+  }
+
+  if (toastNode) {
+    toastNode.hidden = NFC_FUNCTIONALITY_HIDDEN;
+  }
+
+  if (NFC_FUNCTIONALITY_HIDDEN) {
+    hideNfcToast();
+    stopNfcSession();
   }
 }
 
@@ -220,6 +235,10 @@ function redirectToNfcPayload(payload) {
 }
 
 async function shareLatestFileOverNfc() {
+  if (NFC_FUNCTIONALITY_HIDDEN) {
+    return;
+  }
+
   if (!latestUploadedFile) {
     toast('upload a file first', true);
     return;
@@ -264,6 +283,10 @@ async function shareLatestFileOverNfc() {
 }
 
 async function startNfcReceive() {
+  if (NFC_FUNCTIONALITY_HIDDEN) {
+    return;
+  }
+
   if (!canUseNfc()) {
     toast('nfc is not available on this device', true);
     return;
