@@ -13,8 +13,13 @@ let sidebarSettleCleanup = null;
 let sidebarMotionIdleTimer = null;
 let activeNfcAbortController = null;
 let sharePopup = null;
+let qrScanStream = null;
+let qrScanFrameHandle = null;
+let qrScanSessionId = 0;
+let qrScanLastInvalidValue = '';
+let qrScanLastInvalidAt = 0;
 const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
-const PAGE_IDS = ['main', 'client', 'api', 'changelog', 'tos', 'privacy'];
+const PAGE_IDS = ['main', 'scan', 'api', 'changelog', 'tos', 'privacy'];
 const PAGE_TRANSITION_MS = 220;
 const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 const SIDEBAR_SETTLE_VELOCITY_THRESHOLD = 0.55;
@@ -23,6 +28,7 @@ const DEBUG_UI_ENABLED = window.GHOSTDROP_DEBUG_UI === true;
 const NFC_FUNCTIONALITY_HIDDEN = true; // set to true to hide NFC feature i would revisit it later turst me
 const GHOSTDROP_PUBLIC_FILE_BASE = 'https://link.ghostdrop.qzz.io';
 const GHOSTDROP_APP_FILE_BASE = window.GHOSTDROP_APP_FILE_BASE || GHOSTDROP_PUBLIC_FILE_BASE;
+const GHOSTDROP_QR_HOST = 'link.ghostdrop.qzz.io';
 const isApp = navigator.userAgent.toLowerCase().includes('median');
 const nfcTextDecoder = new TextDecoder();
 const nfcTextEncoder = new TextEncoder();
@@ -235,6 +241,238 @@ function redirectToNfcPayload(payload) {
   window.location.assign(targetUrl);
 }
 
+function getScanElements() {
+  return {
+    page: document.getElementById('page-scan'),
+    video: document.getElementById('scanVideo'),
+    status: document.getElementById('scanStatus'),
+    startBtn: document.getElementById('scanStartBtn'),
+    stopBtn: document.getElementById('scanStopBtn'),
+  };
+}
+
+function setScanStatus(message, options = {}) {
+  const { error = false, live = false } = options;
+  const { status } = getScanElements();
+  if (!status) {
+    return;
+  }
+
+  status.textContent = message;
+  status.classList.toggle('is-error', error);
+  status.classList.toggle('is-live', live);
+}
+
+function updateScanButtons(isScanning) {
+  const { startBtn, stopBtn } = getScanElements();
+  if (startBtn) {
+    startBtn.disabled = isScanning;
+  }
+
+  if (stopBtn) {
+    stopBtn.disabled = !isScanning;
+  }
+}
+
+function normalizeGhostDropScanUrl(rawValue) {
+  const rawText = rawValue?.trim();
+  if (!rawText) {
+    return null;
+  }
+
+  const candidateUrl = /^[a-z][a-z0-9+.-]*:/i.test(rawText)
+    ? rawText
+    : 'https://' + rawText.replace(/^\/+/, '');
+
+  try {
+    const parsedUrl = new URL(candidateUrl);
+    if (!/^https?:$/.test(parsedUrl.protocol)) {
+      return null;
+    }
+
+    if (parsedUrl.hostname.toLowerCase() !== GHOSTDROP_QR_HOST) {
+      return null;
+    }
+
+    const pathParts = parsedUrl.pathname.split('/').filter(Boolean);
+    if (pathParts.length !== 1) {
+      return null;
+    }
+
+    return buildFileShareUrl(pathParts[0]);
+  } catch {
+    return null;
+  }
+}
+
+function stopQrScanner(options = {}) {
+  const { resetStatus = true, clearPreview = true } = options;
+  qrScanSessionId += 1;
+  qrScanLastInvalidValue = '';
+  qrScanLastInvalidAt = 0;
+
+  if (qrScanFrameHandle) {
+    window.cancelAnimationFrame(qrScanFrameHandle);
+    qrScanFrameHandle = null;
+  }
+
+  if (qrScanStream) {
+    qrScanStream.getTracks().forEach((track) => track.stop());
+    qrScanStream = null;
+  }
+
+  const { video } = getScanElements();
+  if (video) {
+    try {
+      video.pause();
+    } catch {}
+
+    if (clearPreview) {
+      video.srcObject = null;
+    }
+  }
+
+  updateScanButtons(false);
+
+  if (resetStatus) {
+    setScanStatus('Allow camera access or tap start camera to begin scanning.');
+  }
+}
+
+async function scanQrFrame(sessionId, detector) {
+  if (sessionId !== qrScanSessionId) {
+    return;
+  }
+
+  const { video } = getScanElements();
+  if (!video || !qrScanStream) {
+    return;
+  }
+
+  try {
+    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      const detections = await detector.detect(video);
+      if (sessionId !== qrScanSessionId) {
+        return;
+      }
+
+      if (detections.length > 0) {
+        const rawValue = detections[0].rawValue?.trim();
+        if (rawValue) {
+          const targetUrl = normalizeGhostDropScanUrl(rawValue);
+          if (targetUrl) {
+            logFrontend('scan:success', { rawValue, targetUrl });
+            setScanStatus('GhostDrop file found. Opening it now…', { live: true });
+            stopQrScanner({ resetStatus: false, clearPreview: false });
+            window.setTimeout(() => window.location.assign(targetUrl), 180);
+            return;
+          }
+
+          const now = Date.now();
+          if (rawValue !== qrScanLastInvalidValue || now - qrScanLastInvalidAt > 1400) {
+            qrScanLastInvalidValue = rawValue;
+            qrScanLastInvalidAt = now;
+            logFrontend('scan:invalid-qr', { rawValue });
+            setScanStatus('invalid qr', { error: true });
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    logFrontend('scan:failed', { message: error.message });
+    stopQrScanner({ resetStatus: false });
+    setScanStatus('camera scan failed: ' + error.message, { error: true });
+    return;
+  }
+
+  qrScanFrameHandle = window.requestAnimationFrame(() => {
+    void scanQrFrame(sessionId, detector);
+  });
+}
+
+async function startQrScanner() {
+  const { page, video } = getScanElements();
+  if (!page || !video) {
+    return;
+  }
+
+  if (currentPageId !== 'scan' && pendingPageId !== 'scan' && !page.classList.contains('active')) {
+    return;
+  }
+
+  if (!window.isSecureContext) {
+    setScanStatus('camera access requires a secure context', { error: true });
+    updateScanButtons(false);
+    return;
+  }
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    setScanStatus('camera access is not supported on this device', { error: true });
+    updateScanButtons(false);
+    return;
+  }
+
+  if (typeof window.BarcodeDetector !== 'function') {
+    setScanStatus('qr scanning is not supported on this device', { error: true });
+    updateScanButtons(false);
+    return;
+  }
+
+  try {
+    const supportedFormats = await window.BarcodeDetector.getSupportedFormats?.();
+    if (Array.isArray(supportedFormats) && !supportedFormats.includes('qr_code')) {
+      setScanStatus('qr scanning is not supported on this device', { error: true });
+      updateScanButtons(false);
+      return;
+    }
+  } catch {}
+
+  stopQrScanner({ resetStatus: false });
+  const sessionId = qrScanSessionId + 1;
+  qrScanSessionId = sessionId;
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: {
+        facingMode: { ideal: 'environment' },
+      },
+    });
+
+    if (sessionId !== qrScanSessionId) {
+      stream.getTracks().forEach((track) => track.stop());
+      return;
+    }
+
+    qrScanStream = stream;
+    video.srcObject = stream;
+    await video.play().catch(() => {});
+    updateScanButtons(true);
+    setScanStatus('point the camera at a GhostDrop QR code', { live: true });
+    logFrontend('scan:start', { sessionId });
+
+    const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+    qrScanFrameHandle = window.requestAnimationFrame(() => {
+      void scanQrFrame(sessionId, detector);
+    });
+  } catch (error) {
+    console.error(error);
+    logFrontend('scan:start-failed', { message: error.message });
+    stopQrScanner({ resetStatus: false });
+    setScanStatus('camera access failed: ' + error.message, { error: true });
+  }
+}
+
+function handlePageActivation(nextPageId) {
+  if (nextPageId === 'scan') {
+    void startQrScanner();
+    return;
+  }
+
+  stopQrScanner();
+}
+
 async function shareLatestFileOverNfc() {
   if (NFC_FUNCTIONALITY_HIDDEN) {
     return;
@@ -370,6 +608,10 @@ function setSelectedFile(file) {
 }
 
 function normalizePageId(id) {
+  if (id === 'client') {
+    return 'scan';
+  }
+
   return PAGE_IDS.includes(id) ? id : 'main';
 }
 
@@ -662,6 +904,7 @@ function activatePage(id, direction, animate = true) {
   pendingPageId = null;
   setActiveSidebarLink(id, animate);
   window.scrollTo(0, 0);
+  handlePageActivation(id);
   logFrontend('page:activated', { id, direction, animate });
 }
 
@@ -1338,6 +1581,18 @@ async function initializePage() {
     nfcReceiveBtn.addEventListener('click', startNfcReceive);
   }
 
+  const scanStartBtn = document.getElementById('scanStartBtn');
+  if (scanStartBtn) {
+    scanStartBtn.addEventListener('click', () => {
+      void startQrScanner();
+    });
+  }
+
+  const scanStopBtn = document.getElementById('scanStopBtn');
+  if (scanStopBtn) {
+    scanStopBtn.addEventListener('click', () => stopQrScanner());
+  }
+
   const uploadBtn = document.getElementById('uploadBtn');
   if (uploadBtn) {
     uploadBtn.addEventListener('click', uploadFile);
@@ -1407,6 +1662,10 @@ window.addEventListener('resize', () => {
   if (sidebar?.dataset.dragged === 'true') {
     setSidebarPosition(sidebar.offsetLeft, sidebar.offsetTop);
   }
+});
+
+window.addEventListener('pagehide', () => {
+  stopQrScanner({ resetStatus: false });
 });
 
 function refreshNativeCapabilities() {
