@@ -298,13 +298,16 @@ body.modal-open {
         <input type="password" id="uploadPasswordInput" placeholder="set a password for this file">
       </div>
       <button type="button" class="upload-btn" id="uploadBtn" disabled>upload</button>
+      <div class="utility-actions">
+        <button type="button" class="utility-btn" id="nfcReceiveBtn" hidden>receive via nfc</button>
+      </div>
 
       <div class="result" id="resultCard">
         <div class="result-top">uploaded</div>
         <div class="result-rows">
           <div>
             <div class="r-label">link</div>
-            <div class="r-val"><a id="res-url" class="r-link" style="font-size:11px;" target="_blank" rel="noopener"></a><button type="button" class="copy-btn" data-copy-link="true">copy</button><button type="button" class="copy-btn" id="shareBtn" disabled>share</button></div>
+            <div class="r-val"><a id="res-url" class="r-link" style="font-size:11px;" target="_blank" rel="noopener"></a><button type="button" class="copy-btn" data-copy-link="true">copy</button><button type="button" class="copy-btn" id="shareBtn" disabled>share</button><button type="button" class="copy-btn" id="nfcShareBtn" hidden disabled>nfc</button></div>
           </div>
           <div>
             <div class="r-label">expires</div>
@@ -706,8 +709,8 @@ body.modal-open {
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
-
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="nfctoast" id="nfctoast" role="status" aria-live="polite"></div>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RBQ1FSXXQG"></script>
 
 <script>

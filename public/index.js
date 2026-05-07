@@ -1,23 +1,29 @@
 let tries = 0;
 let BASE = '';
 let selectedFile = null;
+let latestUploadedFile = null;
 let expiryTimer = null;
+let toastHideTimer = null;
+let nfcToastHideTimer = null;
 let pageTransitionTimer = null;
 let currentPageId = null;
 let pendingPageId = null;
 let sidebarDragState = null;
 let sidebarSettleCleanup = null;
 let sidebarMotionIdleTimer = null;
+let activeNfcAbortController = null;
 const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
 const PAGE_IDS = ['main', 'client', 'api', 'changelog', 'tos', 'privacy'];
 const PAGE_TRANSITION_MS = 220;
 const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 const SIDEBAR_SETTLE_VELOCITY_THRESHOLD = 0.55;
-const mobileNavQuery = window.matchMedia('(max-width: 600px)');
+const mobileViewportQuery = window.matchMedia('(max-width: 600px)');
 const DEBUG_UI_ENABLED = window.GHOSTDROP_DEBUG_UI === true;
-// app or browser check
-const isApp =
-  navigator.userAgent.toLowerCase().includes("median");
+const GHOSTDROP_PUBLIC_FILE_BASE = 'https://link.ghostdrop.qzz.io';
+const GHOSTDROP_APP_FILE_BASE = window.GHOSTDROP_APP_FILE_BASE || GHOSTDROP_PUBLIC_FILE_BASE;
+const isApp = navigator.userAgent.toLowerCase().includes('median');
+const nfcTextDecoder = new TextDecoder();
+const nfcTextEncoder = new TextEncoder();
   
 function logFrontend(eventName, detail) {
   if (!DEBUG_UI_ENABLED) {
@@ -47,6 +53,261 @@ async function getApiUrl() {
   const url = await res.text();
   logFrontend('api-url:ready', { url: url.trim() });
   return url.trim();
+}
+
+function isNfcSupported() {
+  return typeof window.NDEFReader === 'function';
+}
+
+function canUseNfc() {
+  return isMobileDevice() && isNfcSupported();
+}
+
+function buildFileShareUrl(fileId) {
+  return GHOSTDROP_PUBLIC_FILE_BASE.replace(/\/$/, '') + '/' + encodeURIComponent(fileId);
+}
+
+function buildAppFileUrl(fileId, fallbackUrl = '') {
+  if (!fileId) {
+    return fallbackUrl;
+  }
+
+  return GHOSTDROP_APP_FILE_BASE.replace(/\/$/, '') + '/' + encodeURIComponent(fileId);
+}
+
+function extractFileIdFromUrl(url) {
+  try {
+    const parsedUrl = new URL(url);
+    const pathParts = parsedUrl.pathname.split('/').filter(Boolean);
+    return pathParts[pathParts.length - 1] || null;
+  } catch {
+    return null;
+  }
+}
+
+function hideNfcToast() {
+  const toastNode = document.getElementById('nfctoast');
+  if (!toastNode) {
+    return;
+  }
+
+  toastNode.classList.remove('show', 'is-error', 'is-persistent');
+  if (nfcToastHideTimer) {
+    clearTimeout(nfcToastHideTimer);
+    nfcToastHideTimer = null;
+  }
+}
+
+function showNfcToast(message, options = {}) {
+  const { error = false, persistent = false } = options;
+  const toastNode = document.getElementById('nfctoast');
+  if (!toastNode) {
+    return;
+  }
+
+  logFrontend('nfctoast', { message, error, persistent });
+
+  if (nfcToastHideTimer) {
+    clearTimeout(nfcToastHideTimer);
+    nfcToastHideTimer = null;
+  }
+
+  toastNode.textContent = message;
+  toastNode.classList.toggle('is-error', error);
+  toastNode.classList.toggle('is-persistent', persistent);
+  toastNode.classList.remove('show');
+  void toastNode.offsetWidth;
+  toastNode.classList.add('show');
+
+  if (!persistent) {
+    nfcToastHideTimer = window.setTimeout(() => {
+      toastNode.classList.remove('show');
+      nfcToastHideTimer = null;
+    }, 3200);
+  }
+}
+
+function stopNfcSession() {
+  if (!activeNfcAbortController) {
+    return;
+  }
+
+  activeNfcAbortController.abort();
+  activeNfcAbortController = null;
+  logFrontend('nfc:session-stopped');
+}
+
+function updateNfcControls() {
+  const shareBtn = document.getElementById('nfcShareBtn');
+  const receiveBtn = document.getElementById('nfcReceiveBtn');
+  const nfcAvailable = canUseNfc();
+
+  if (shareBtn) {
+    shareBtn.hidden = !nfcAvailable;
+    shareBtn.disabled = !nfcAvailable || !latestUploadedFile;
+  }
+
+  if (receiveBtn) {
+    receiveBtn.hidden = !nfcAvailable;
+    receiveBtn.disabled = !nfcAvailable;
+  }
+}
+
+function parseNfcJsonText(text) {
+  try {
+    const payload = JSON.parse(text);
+    if (payload && typeof payload === 'object') {
+      return payload;
+    }
+  } catch {}
+
+  return null;
+}
+
+function parseNfcRecord(record) {
+  const rawText = record.data ? nfcTextDecoder.decode(record.data) : '';
+
+  if (record.recordType === 'url') {
+    const url = rawText.trim();
+    return url ? { url } : null;
+  }
+
+  if (record.recordType === 'text' || record.recordType === 'mime' || record.mediaType === 'application/json') {
+    const parsedPayload = parseNfcJsonText(rawText.trim());
+    if (parsedPayload) {
+      return parsedPayload;
+    }
+
+    if (/^https?:\/\//i.test(rawText.trim())) {
+      return { url: rawText.trim() };
+    }
+  }
+
+  return null;
+}
+
+function extractGhostDropPayload(message) {
+  for (const record of message.records) {
+    const payload = parseNfcRecord(record);
+    if (!payload) {
+      continue;
+    }
+
+    if (payload.type === 'ghostdrop' || payload.file_id || payload.url) {
+      return payload;
+    }
+  }
+
+  return null;
+}
+
+function redirectToNfcPayload(payload) {
+  const fileId = payload.file_id || extractFileIdFromUrl(payload.url || '');
+  const publicUrl = payload.url || (fileId ? buildFileShareUrl(fileId) : '');
+  const targetUrl = fileId ? buildAppFileUrl(fileId, publicUrl) : publicUrl;
+
+  if (!targetUrl) {
+    throw new Error('GhostDrop NFC payload did not contain a usable file link');
+  }
+
+  logFrontend('nfc:redirect', {
+    fileId,
+    targetUrl,
+    isApp,
+  });
+
+  window.location.assign(targetUrl);
+}
+
+async function shareLatestFileOverNfc() {
+  if (!latestUploadedFile) {
+    toast('upload a file first', true);
+    return;
+  }
+
+  if (!canUseNfc()) {
+    toast('nfc is not available on this device', true);
+    return;
+  }
+
+  stopNfcSession();
+  showNfcToast('Hold an NFC tag near this device to write the GhostDrop link', { persistent: true });
+
+  try {
+    const ndef = new NDEFReader();
+    const payload = {
+      v: 1,
+      type: 'ghostdrop',
+      file_id: latestUploadedFile.id,
+      filename: latestUploadedFile.originalName,
+      expires_in_hours: latestUploadedFile.expiresInHours,
+      url: latestUploadedFile.url,
+    };
+
+    logFrontend('nfc:write-start', payload);
+    await ndef.write({
+      records: [{
+        recordType: 'mime',
+        mediaType: 'application/json',
+        data: nfcTextEncoder.encode(JSON.stringify(payload)),
+      }],
+    });
+
+    navigator.vibrate?.([90, 45, 90]);
+    showNfcToast('GhostDrop link written. Tap the tag with the receiving device.', { persistent: false });
+    logFrontend('nfc:write-success', { id: latestUploadedFile.id });
+  } catch (error) {
+    console.error(error);
+    showNfcToast('NFC share failed: ' + error.message, { error: true });
+    logFrontend('nfc:write-failed', { message: error.message });
+  }
+}
+
+async function startNfcReceive() {
+  if (!canUseNfc()) {
+    toast('nfc is not available on this device', true);
+    return;
+  }
+
+  stopNfcSession();
+  activeNfcAbortController = new AbortController();
+
+  try {
+    const ndef = new NDEFReader();
+    showNfcToast('Bring a GhostDrop NFC tag near this device to open the file', { persistent: true });
+    logFrontend('nfc:scan-start');
+
+    ndef.addEventListener('readingerror', () => {
+      showNfcToast('NFC tag detected, but the payload could not be read', { error: true });
+      logFrontend('nfc:scan-read-error');
+    }, { signal: activeNfcAbortController.signal });
+
+    ndef.addEventListener('reading', (event) => {
+      try {
+        const payload = extractGhostDropPayload(event.message);
+        if (!payload) {
+          throw new Error('no GhostDrop payload found on the NFC tag');
+        }
+
+        showNfcToast('GhostDrop file found. Opening it now…');
+        navigator.vibrate?.([75, 40, 75]);
+        logFrontend('nfc:scan-success', payload);
+        stopNfcSession();
+        window.setTimeout(() => redirectToNfcPayload(payload), 240);
+      } catch (error) {
+        console.error(error);
+        showNfcToast('NFC receive failed: ' + error.message, { error: true });
+        logFrontend('nfc:scan-parse-failed', { message: error.message });
+      }
+    }, { signal: activeNfcAbortController.signal });
+
+    await ndef.scan({ signal: activeNfcAbortController.signal });
+  } catch (error) {
+    activeNfcAbortController = null;
+    console.error(error);
+    showNfcToast('NFC receive failed: ' + error.message, { error: true });
+    logFrontend('nfc:scan-failed', { message: error.message });
+  }
 }
 
 function setSelectedFile(file) {
@@ -204,8 +465,23 @@ function setSidebarDragDirection(direction) {
   sidebar.dataset.dragDirection = direction > 0 ? 'right' : 'left';
 }
 
+function isMobileDevice() {
+  if (typeof navigator.userAgentData?.mobile === 'boolean') {
+    return navigator.userAgentData.mobile;
+  }
+
+  const ua = navigator.userAgent || '';
+  if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
+    return true;
+  }
+
+  return /Macintosh/i.test(ua)
+    && navigator.maxTouchPoints > 1
+    && Math.max(window.screen.width, window.screen.height) <= 1366;
+}
+
 function isMobileNavLayout() {
-  return mobileNavQuery.matches;
+  return isMobileDevice() && mobileViewportQuery.matches;
 }
 
 function resetSidebarForMobile() {
@@ -499,7 +775,14 @@ async function uploadFile(event) {
     const urlNode = document.getElementById('res-url');
     urlNode.textContent = url;
     urlNode.href = url;
+    latestUploadedFile = {
+      id: data.id,
+      originalName: data.original_name,
+      expiresInHours: data.expires_in_hours,
+      url,
+    };
     updateShareButtonVisibility();
+    updateNfcControls();
     document.getElementById('resultCard').style.display = 'block';
     document.getElementById('fileInput').value = '';
     document.getElementById('filePill').style.display = 'none';
@@ -612,9 +895,7 @@ function getGoNativeShare() {
 }
 
 function isMobileShareEnvironment() {
-  const ua = navigator.userAgent || '';
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
-    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return isMobileDevice();
 }
 
 function canShareFile() {
@@ -750,10 +1031,20 @@ function toast(msg, err = false) {
     return;
   }
   logFrontend('toast', { message: msg, error: err });
+  if (toastHideTimer) {
+    clearTimeout(toastHideTimer);
+    toastHideTimer = null;
+  }
+
   t.textContent = msg;
-  t.style.borderColor = err ? 'rgba(255,92,92,0.2)' : 'rgba(255,255,255,0.1)';
+  t.classList.toggle('is-error', err);
+  t.classList.remove('show');
+  void t.offsetWidth;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2600);
+  toastHideTimer = window.setTimeout(() => {
+    t.classList.remove('show');
+    toastHideTimer = null;
+  }, 2800);
 }
 
 async function initializePage() {
@@ -766,6 +1057,7 @@ async function initializePage() {
   }
 
   updateShareButtonVisibility();
+  updateNfcControls();
 
   document.querySelectorAll('[data-copy-link="true"]').forEach((btn) => {
     btn.addEventListener('click', (event) => copyLink(event, btn));
@@ -777,6 +1069,16 @@ async function initializePage() {
       const url = document.getElementById('res-url')?.href;
       shareFile(url);
     });
+  }
+
+  const nfcShareBtn = document.getElementById('nfcShareBtn');
+  if (nfcShareBtn) {
+    nfcShareBtn.addEventListener('click', shareLatestFileOverNfc);
+  }
+
+  const nfcReceiveBtn = document.getElementById('nfcReceiveBtn');
+  if (nfcReceiveBtn) {
+    nfcReceiveBtn.addEventListener('click', startNfcReceive);
   }
 
   const uploadBtn = document.getElementById('uploadBtn');
@@ -828,8 +1130,10 @@ window.addEventListener('resize', () => {
   logFrontend('resize', {
     width: window.innerWidth,
     height: window.innerHeight,
+    mobileDevice: isMobileDevice(),
     mobileLayout: isMobileNavLayout(),
   });
+  updateNfcControls();
   if (isMobileNavLayout()) {
     resetSidebarForMobile();
   }
@@ -848,8 +1152,13 @@ window.addEventListener('resize', () => {
   }
 });
 
-window.median_library_ready = updateShareButtonVisibility;
-window.gonative_library_ready = updateShareButtonVisibility;
+function refreshNativeCapabilities() {
+  updateShareButtonVisibility();
+  updateNfcControls();
+}
+
+window.median_library_ready = refreshNativeCapabilities;
+window.gonative_library_ready = refreshNativeCapabilities;
 
 window.showPage = showPage;
 window.showpage = showPage;
@@ -857,3 +1166,5 @@ window.onFileSelect = onFileSelect;
 window.toggleEp = toggleEp;
 window.cc = cc;
 window.removeFile = removeFile;
+window.shareLatestFileOverNfc = shareLatestFileOverNfc;
+window.startNfcReceive = startNfcReceive;
