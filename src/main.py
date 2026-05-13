@@ -94,11 +94,36 @@ def cleanup_file(file_id: str) -> None:
         logger.info("Deleted metadata for %s", file_id)
 
 
-def write_metadata(file_id: str, original_name: str, password: str | None = None, password_hash: str | None = None) -> None:
+def format_file_size(size_bytes: int | None) -> str:
+    if size_bytes is None:
+        return "unknown size"
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    if size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    return f"{size_bytes / (1024 * 1024):.1f} MB"
+
+
+def build_embed_description(original_name: str, size_bytes: int | None) -> str:
+    file_label = f"{original_name} ({format_file_size(size_bytes)})"
+    return (
+        f"{file_label} - Download your file from GhostDrop - A secure, anonymous file sharing platform. "
+        "This file was uploaded by a user. Download only if you trust the source."
+    )
+
+
+def write_metadata(
+    file_id: str,
+    original_name: str,
+    size_bytes: int | None = None,
+    password: str | None = None,
+    password_hash: str | None = None,
+) -> None:
     metadata = {
         "password_hash": password_hash,
         "has_password": password_hash is not None,
         "original_name": original_name,
+        "size_bytes": size_bytes,
         "expires_at": (utc_now() + EXPIRY_DURATION).isoformat(),
         "views": 0,
     }
@@ -146,14 +171,29 @@ def cleanup_expired_files() -> None:
         logger.info("Cleaned up %s expired file(s)", deleted_files)
 
 
-def render_download_page(file_id: str) -> str:
+def render_download_page(file_id: str, metadata: dict, file_path: Path) -> str:
     quoted_file_id = quote(file_id, safe="")
+    size_bytes = metadata.get("size_bytes")
+
+    if size_bytes is None and file_path.exists():
+        size_bytes = file_path.stat().st_size
+
+    embed_description = escape(
+        build_embed_description(
+            metadata.get("original_name", file_id),
+            size_bytes,
+        )
+    )
+
     return DOWNLOAD_TEMPLATE_PATH.read_text(encoding="utf-8").replace(
         "__FILE_ID_URL__",
         quoted_file_id,
     ).replace(
         "__FILE_ID__",
         escape(file_id),
+    ).replace(
+        "__EMBED_DESCRIPTION__",
+        embed_description,
     )
 
 
@@ -277,6 +317,7 @@ async def upload_file(file: UploadFile = File(...), password: Annotated[str | No
     write_metadata(
         file_id,
         file.filename or file_id,
+        size_bytes=file_path.stat().st_size,
         password_hash=password_hash
     )    
     logger.info("Stored upload %s as %s", file.filename, file_id)
@@ -311,7 +352,7 @@ async def read_items(file_id: str):
 
     increment_views(file_id, metadata)
     logger.info("Rendering download page for %s", file_id)
-    return HTMLResponse(content=render_download_page(file_id))
+    return HTMLResponse(content=render_download_page(file_id, metadata, file_path))
 
 @app.get("/files/{file_id}")
 async def get_file(file_id: str, password: Annotated[str | None, Header()] = None):
@@ -364,6 +405,7 @@ async def get_metadata(file_id: str):
     logger.info("Metadata retrieved for %s", file_id)
     return {
         "original_name": metadata["original_name"],
+        "size_bytes": metadata.get("size_bytes"),
         "expires_at": metadata["expires_at"],
         "views": metadata.get("views", 0),
         "has_password": metadata.get("has_password", False),
