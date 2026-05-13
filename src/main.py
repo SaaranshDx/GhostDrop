@@ -104,10 +104,10 @@ def format_file_size(size_bytes: int | None) -> str:
     return f"{size_bytes / (1024 * 1024):.1f} MB"
 
 
-def build_embed_description(original_name: str, size_bytes: int | None) -> str:
+def build_embed_description(original_name: str, size_bytes: int | None, views: int = 0) -> str:
     file_label = f"{original_name} ({format_file_size(size_bytes)})"
     return (
-        f"{file_label} - Download your file from GhostDrop - A secure, anonymous file sharing platform. "
+        f"{file_label} - {views} views - Download your file from GhostDrop - A secure, anonymous file sharing platform. "
         "This file was uploaded by a user. Download only if you trust the source."
     )
 
@@ -174,6 +174,7 @@ def cleanup_expired_files() -> None:
 def render_download_page(file_id: str, metadata: dict, file_path: Path) -> str:
     quoted_file_id = quote(file_id, safe="")
     size_bytes = metadata.get("size_bytes")
+    views = metadata.get("views", 0)
 
     if size_bytes is None and file_path.exists():
         size_bytes = file_path.stat().st_size
@@ -182,6 +183,7 @@ def render_download_page(file_id: str, metadata: dict, file_path: Path) -> str:
         build_embed_description(
             metadata.get("original_name", file_id),
             size_bytes,
+            views,
         )
     )
 
