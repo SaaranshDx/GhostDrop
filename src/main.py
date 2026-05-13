@@ -280,7 +280,10 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 @app.get("/")
 async def index():
-    return RedirectResponse(url="https://ghostdrop.qzz.io/")
+    return RedirectResponse(
+    "https://ghostdrop.qzz.io",
+    status_code=302
+)
 
 @app.get("/health")
 async def health_check():
