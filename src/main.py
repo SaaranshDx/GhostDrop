@@ -104,6 +104,28 @@ def format_file_size(size_bytes: int | None) -> str:
     return f"{size_bytes / (1024 * 1024):.1f} MB"
 
 
+def format_expiry_label(expires_at: str | None) -> str:
+    if not expires_at:
+        return "unknown"
+
+    try:
+        expires_dt = datetime.fromisoformat(expires_at).astimezone(timezone.utc)
+    except ValueError:
+        return "unknown"
+
+    remaining = expires_dt - utc_now()
+    if remaining.total_seconds() <= 0:
+        return "expired"
+
+    total_minutes = int(remaining.total_seconds() // 60)
+    hours, minutes = divmod(total_minutes, 60)
+
+    if hours <= 0:
+        return f"in {max(minutes, 1)}m"
+
+    return f"in {hours}h {minutes}m"
+
+
 def build_embed_description(original_name: str, size_bytes: int | None, views: int = 0) -> str:
     file_label = f"{original_name} ({format_file_size(size_bytes)})"
     return (
@@ -175,13 +197,16 @@ def render_download_page(file_id: str, metadata: dict, file_path: Path) -> str:
     quoted_file_id = quote(file_id, safe="")
     size_bytes = metadata.get("size_bytes")
     views = metadata.get("views", 0)
+    original_name = metadata.get("original_name", file_id)
+    expires_at = metadata.get("expires_at")
+    has_password = metadata.get("has_password", False)
 
     if size_bytes is None and file_path.exists():
         size_bytes = file_path.stat().st_size
 
     embed_description = escape(
         build_embed_description(
-            metadata.get("original_name", file_id),
+            original_name,
             size_bytes,
             views,
         )
@@ -193,6 +218,21 @@ def render_download_page(file_id: str, metadata: dict, file_path: Path) -> str:
     ).replace(
         "__FILE_ID__",
         escape(file_id),
+    ).replace(
+        "__FILE_NAME__",
+        escape(original_name),
+    ).replace(
+        "__FILE_SIZE__",
+        escape(format_file_size(size_bytes)),
+    ).replace(
+        "__FILE_VIEWS__",
+        escape(str(views)),
+    ).replace(
+        "__FILE_EXPIRY__",
+        escape(format_expiry_label(expires_at)),
+    ).replace(
+        "__FILE_ACCESS__",
+        "password protected" if has_password else "open link",
     ).replace(
         "__EMBED_DESCRIPTION__",
         embed_description,
@@ -347,7 +387,6 @@ async def read_items(file_id: str):
         cleanup_file(file_id)
         return JSONResponse(
             status_code=410,
-            content={"error": EXPIRED_MESSAGE},
         )
 
     file_path = UPLOAD_DIR / file_id
@@ -430,7 +469,8 @@ async def delete_file(file_id: str, password: Annotated[str | None, Header()] = 
 
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc):
-    return FileResponse("public/404.html", status_code=404)
+    not_found_path = SRC_DIR / "public" / "404.html"
+    return FileResponse(path=str(not_found_path), status_code=404)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=service_port, reload=False)

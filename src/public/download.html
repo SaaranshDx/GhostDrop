@@ -52,9 +52,31 @@
       <p class="password-note">This file is protected. Enter the password to continue.</p>
     </div>
 
-    <div class="download-meta">
-      <div class="meta-label">file id</div>
-      <div class="meta-value">__FILE_ID__</div>
+    <div class="download-meta" aria-label="File details">
+      <div class="meta-item meta-item-wide">
+        <div class="meta-label">file name</div>
+        <div class="meta-value" id="fileNameValue">__FILE_NAME__</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">size</div>
+        <div class="meta-value" id="fileSizeValue">__FILE_SIZE__</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">expires</div>
+        <div class="meta-value" id="fileExpiryValue">__FILE_EXPIRY__</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">views</div>
+        <div class="meta-value" id="fileViewsValue">__FILE_VIEWS__</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">access</div>
+        <div class="meta-value" id="fileAccessValue">__FILE_ACCESS__</div>
+      </div>
+      <div class="meta-item meta-item-wide">
+        <div class="meta-label">file id</div>
+        <div class="meta-value" id="fileIdValue">__FILE_ID__</div>
+      </div>
     </div>
 
     <button class="download-btn" id="downloadBtn" type="button">download now</button>
@@ -73,6 +95,11 @@
   const passwordInput = document.getElementById("passwordInput");
   const downloadStatus = document.getElementById("downloadStatus");
   const downloadNote = document.getElementById("downloadNote");
+  const fileNameValue = document.getElementById("fileNameValue");
+  const fileSizeValue = document.getElementById("fileSizeValue");
+  const fileExpiryValue = document.getElementById("fileExpiryValue");
+  const fileViewsValue = document.getElementById("fileViewsValue");
+  const fileAccessValue = document.getElementById("fileAccessValue");
   let remaining = 3;
   let countdownTimer = null;
   let metadata = null;
@@ -100,6 +127,63 @@
     }
 
     return metadata?.original_name || fileId;
+  }
+
+  function formatFileSize(sizeBytes) {
+    if (sizeBytes == null || Number.isNaN(Number(sizeBytes))) {
+      return "unknown size";
+    }
+
+    const size = Number(sizeBytes);
+
+    if (size < 1024) {
+      return `${size} B`;
+    }
+
+    if (size < 1024 * 1024) {
+      return `${(size / 1024).toFixed(1)} KB`;
+    }
+
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function formatExpiry(expiresAt) {
+    if (!expiresAt) {
+      return "unknown";
+    }
+
+    const expiresDate = new Date(expiresAt);
+
+    if (Number.isNaN(expiresDate.getTime())) {
+      return "unknown";
+    }
+
+    const diffMs = expiresDate.getTime() - Date.now();
+    if (diffMs <= 0) {
+      return "expired";
+    }
+
+    const totalMinutes = Math.floor(diffMs / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (hours <= 0) {
+      return `in ${Math.max(minutes, 1)}m`;
+    }
+
+    return `in ${hours}h ${minutes}m`;
+  }
+
+  function updateFileInfo() {
+    if (!metadata) {
+      return;
+    }
+
+    fileNameValue.textContent = metadata.original_name || fileId;
+    fileSizeValue.textContent = formatFileSize(metadata.size_bytes);
+    fileExpiryValue.textContent = formatExpiry(metadata.expires_at);
+    fileViewsValue.textContent = String(metadata.views ?? 0);
+    fileAccessValue.textContent = metadata.has_password ? "password protected" : "open link";
   }
 
   async function triggerDownload() {
@@ -169,6 +253,7 @@
 
       metadata = await response.json();
       requiresPassword = Boolean(metadata.has_password);
+      updateFileInfo();
       downloadNote.textContent = requiresPassword
         ? "Enter the password provided by the sender, then start the download."
         : "If nothing happens, use the button above. Expired or missing files will return an error from the backend.";

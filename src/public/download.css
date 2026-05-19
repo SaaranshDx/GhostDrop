@@ -115,7 +115,7 @@ body {
 
 .download-content {
   width: 100%;
-  max-width: 640px;
+  max-width: 760px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -217,23 +217,55 @@ body {
 }
 
 .download-meta {
+  width: 100%;
+  max-width: 700px;
   margin-bottom: 1.4rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  text-align: left;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.meta-item-wide {
+  grid-column: 1 / -1;
 }
 
 .meta-label {
-  margin-bottom: 0.35rem;
+  margin-bottom: 0;
   color: var(--muted);
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.8px;
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .meta-value {
   color: var(--text);
-  font-family: var(--mono);
-  font-size: 12px;
-  word-break: break-all;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: right;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+.meta-item-wide .meta-value {
+  max-width: 72%;
 }
 
 .download-btn {
@@ -294,6 +326,25 @@ body {
 
   .download-wrap {
     padding-top: 8.5rem;
+  }
+
+  .download-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .meta-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .meta-item-wide {
+    grid-column: auto;
+  }
+
+  .meta-value,
+  .meta-item-wide .meta-value {
+    max-width: none;
+    text-align: left;
   }
 
   .status-belt-item {

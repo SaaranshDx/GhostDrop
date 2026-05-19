@@ -1214,16 +1214,22 @@ function ensureSharePopup() {
       position: fixed;
       inset: 0;
       z-index: 1400;
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       padding: 1rem;
       background: rgba(8, 8, 8, 0.82);
       backdrop-filter: blur(14px);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.22s ease, visibility 0.22s ease;
     }
 
     .share-popup.is-visible {
-      display: flex;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
     }
 
     .share-popup__card {
@@ -1236,6 +1242,16 @@ function ensureSharePopup() {
         #0a0a0a;
       box-shadow: 0 28px 90px rgba(0, 0, 0, 0.45);
       overflow: hidden;
+      opacity: 0;
+      transform: translateY(26px) scale(0.96);
+      transition:
+        opacity 0.28s ease,
+        transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .share-popup.is-visible .share-popup__card {
+      opacity: 1;
+      transform: translateY(0) scale(1);
     }
 
     .share-popup__content {
@@ -1345,6 +1361,14 @@ function ensureSharePopup() {
       opacity: 0.45;
       cursor: not-allowed;
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      .share-popup,
+      .share-popup__card,
+      .share-popup__button {
+        transition: none;
+      }
+    }
   `;
   document.head.appendChild(style);
 
@@ -1447,7 +1471,11 @@ function showSharePopup(url) {
   nativeShareBtn.disabled = !getGoNativeShare() && typeof navigator.share !== 'function';
   nativeShareBtn.onclick = () => shareFileViaOtherApps(url);
 
-  popup.classList.add('is-visible');
+  popup.classList.remove('is-visible');
+  void popup.offsetWidth;
+  requestAnimationFrame(() => {
+    popup.classList.add('is-visible');
+  });
   document.body.classList.add('modal-open');
   logFrontend('share:popup-open', {
     url,
