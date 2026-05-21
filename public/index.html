@@ -98,8 +98,104 @@ body.modal-open {
 .release-popup__section {
   border: 1px solid var(--border);
   border-radius: 14px;
+}
+
+/* Password Popup Modal */
+.password-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: none;
+  align-items: center;
+  justify-content: center;
   padding: 1rem;
-  background: rgba(255,255,255,0.02);
+  background: rgba(8, 8, 8, 0.85);
+  backdrop-filter: blur(14px);
+}
+
+.password-popup.is-visible {
+  display: flex;
+}
+
+.password-popup__card {
+  width: min(100%, 420px);
+  border: 1px solid var(--border2);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(200,255,110,0.14), transparent 32%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)),
+    #0a0a0a;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.45);
+  padding: 2rem;
+}
+
+.password-popup__title {
+  margin-bottom: 1.2rem;
+  color: var(--text);
+  font-family: var(--display);
+  font-size: 1.5rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.password-popup__description {
+  margin-bottom: 1.5rem;
+  color: rgba(239,239,239,0.72);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.password-popup__input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.password-popup__input:focus {
+  outline: none;
+  border-color: var(--green);
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 0 16px rgba(200,255,110,0.1);
+}
+
+.password-popup__actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.password-popup__btn {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(200,255,110,0.1);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.password-popup__btn:hover {
+  background: rgba(200,255,110,0.15);
+  border-color: var(--green);
+}
+
+.password-popup__btn.primary {
+  background: var(--green);
+  color: #0a0a0a;
+  border-color: var(--green);
+}
+
+.password-popup__btn.primary:hover {
+  background: rgba(200,255,110,0.9);
 }
 
 .release-popup__section h3 {
@@ -245,6 +341,19 @@ body.modal-open {
   </div>
 </div>
 
+<!-- Password Popup Modal -->
+<div class="password-popup" id="passwordPopup" role="dialog" aria-modal="true" aria-labelledby="passwordPopupTitle">
+  <div class="password-popup__card">
+    <h2 class="password-popup__title" id="passwordPopupTitle">File Password</h2>
+    <p class="password-popup__description">This file is password protected. Enter the password to download.</p>
+    <input type="password" id="passwordPopupInput" class="password-popup__input" placeholder="enter password">
+    <div class="password-popup__actions">
+      <button type="button" class="password-popup__btn" id="passwordPopupSkip">Skip</button>
+      <button type="button" class="password-popup__btn primary" id="passwordPopupSubmit">Submit</button>
+    </div>
+  </div>
+</div>
+
    
 <div class="status-belt" aria-label="Service status notice">
   <div class="status-belt-track">
@@ -293,9 +402,9 @@ body.modal-open {
         <p class="drop-sub">max 100MB  &middot; expires in 6 hours</p>
       </div>
       <div class="file-pill" id="filePill"></div>
-      <div class="upload-password">
-        <label class="upload-password-label" for="uploadPasswordInput">File password (optional) </label>
-        <input type="password" id="uploadPasswordInput" placeholder="set a password for this file">
+      <div class="upload-slug">
+        <label class="upload-slug-label" for="uploadSlugInput">Custom slug (optional) </label>
+        <input type="text" id="uploadSlugInput" placeholder="custom identifier for this file">
       </div>
       <button type="button" class="upload-btn" id="uploadBtn" disabled>upload</button>
       <div class="utility-actions">
@@ -307,7 +416,7 @@ body.modal-open {
         <div class="result-rows">
           <div>
             <div class="r-label">link</div>
-            <div class="r-val"><a id="res-url" class="r-link" style="font-size:11px;" target="_blank" rel="noopener"></a><button type="button" class="copy-btn" data-copy-link="true">copy</button><button type="button" class="copy-btn" id="shareBtn" disabled>share</button><button type="button" class="copy-btn" id="nfcShareBtn" hidden disabled>nfc</button></div>
+            <div class="r-val"><a id="res-url" class="r-link" style="font-size:11px;" target="_blank" rel="noopener"></a><button type="button" class="copy-btn" data-copy-link="true">copy</button><button type="button" class="copy-btn" id="shareBtn" disabled>share</button><button type="button" class="copy-btn" id="nfcShareBtn" hidden disabled>nfc</button><button type="button" class="copy-btn" id="passwordBtn" disabled>password</button></div>
           </div>
           <div>
             <div class="r-label">expires</div>

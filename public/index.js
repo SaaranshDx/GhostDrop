@@ -2,6 +2,7 @@ let tries = 0;
 let BASE = '';
 let selectedFile = null;
 let latestUploadedFile = null;
+let pendingUpload = false;
 let expiryTimer = null;
 let toastHideTimer = null;
 let nfcToastHideTimer = null;
@@ -60,7 +61,8 @@ async function getApiUrl() {
 
   const url = await res.text();
   logFrontend('api-url:ready', { url: url.trim() });
-  return url.trim();
+  //return url.trim();
+  return "http://localhost:8000";
 }
 
 function isNfcSupported() {
@@ -1013,27 +1015,42 @@ async function uploadFile(event) {
     logFrontend('upload:blocked', { reason: 'base-url-missing' });
     return;
   }
+  
+  // Show password popup before uploading
+  pendingUpload = true;
+  showPasswordPopup();
+}
+
+async function proceedWithUpload(password = '') {
+  if (!selectedFile || !BASE) {
+    return;
+  }
+  
   const btn = document.getElementById('uploadBtn');
   if (!btn) {
     return;
   }
-  const passwordInput = document.getElementById('uploadPasswordInput');
-  const password = passwordInput?.value ?? '';
+  const slugInput = document.getElementById('uploadSlugInput');
+  const slug = slugInput?.value ?? '';
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span>uploading…';
   const fd = new FormData();
   fd.append('file', selectedFile);
+  if (slug) {
+    fd.append('slug', slug);
+  }
+  if (password) {
+    fd.append('password', password);
+  }
   logFrontend('upload:start', {
     name: selectedFile.name,
     size: selectedFile.size,
+    hasSlug: Boolean(slug),
     hasPassword: Boolean(password),
   });
   try {
     const res = await fetch(BASE + '/upload/', {
       method: 'POST',
-      headers: {
-        password,
-      },
       body: fd,
     });
     const data = await res.json();
@@ -1054,8 +1071,8 @@ async function uploadFile(event) {
     document.getElementById('fileInput').value = '';
     document.getElementById('filePill').style.display = 'none';
     document.getElementById('filePill').textContent = '';
-    if (passwordInput) {
-      passwordInput.value = '';
+    if (slugInput) {
+      slugInput.value = '';
     }
     selectedFile = null;
     shareFile(url);
@@ -1492,6 +1509,57 @@ async function shareFile(url) {
   showSharePopup(url);
 }
 
+function showPasswordPopup() {
+  const popup = document.getElementById('passwordPopup');
+  if (popup) {
+    popup.classList.add('is-visible');
+    document.body.classList.add('modal-open');
+    const input = document.getElementById('passwordPopupInput');
+    if (input) {
+      input.focus();
+    }
+  }
+}
+
+function hidePasswordPopup() {
+  const popup = document.getElementById('passwordPopup');
+  if (popup) {
+    popup.classList.remove('is-visible');
+    document.body.classList.remove('modal-open');
+  }
+  const input = document.getElementById('passwordPopupInput');
+  if (input) {
+    input.value = '';
+  }
+  pendingUpload = false;
+}
+
+function skipPasswordPopup() {
+  const shouldProceedWithUpload = pendingUpload && selectedFile;
+  hidePasswordPopup();
+  
+  // Proceed with upload without password
+  if (shouldProceedWithUpload) {
+    proceedWithUpload('');
+  }
+}
+
+function submitPasswordPopup() {
+  const input = document.getElementById('passwordPopupInput');
+  const password = input?.value ?? '';
+  logFrontend('password-popup:submit', { hasPassword: Boolean(password) });
+  
+  // Check if we were waiting for password input before uploading
+  const shouldProceedWithUpload = pendingUpload && selectedFile;
+  
+  hidePasswordPopup();
+  
+  // Proceed with upload after hiding the popup
+  if (shouldProceedWithUpload) {
+    proceedWithUpload(password);
+  }
+}
+
 function cc(btn) {
   const txt = btn.parentElement.innerText.replace(/^copy\n/, '').trim();
   navigator.clipboard?.writeText(txt).then(() => {
@@ -1604,6 +1672,11 @@ async function initializePage() {
     nfcShareBtn.addEventListener('click', shareLatestFileOverNfc);
   }
 
+  const passwordBtn = document.getElementById('passwordBtn');
+  if (passwordBtn) {
+    passwordBtn.addEventListener('click', showPasswordPopup);
+  }
+
   const nfcReceiveBtn = document.getElementById('nfcReceiveBtn');
   if (nfcReceiveBtn) {
     nfcReceiveBtn.addEventListener('click', startNfcReceive);
@@ -1624,6 +1697,26 @@ async function initializePage() {
   const uploadBtn = document.getElementById('uploadBtn');
   if (uploadBtn) {
     uploadBtn.addEventListener('click', uploadFile);
+  }
+
+  // Password popup event listeners
+  const passwordPopupSkip = document.getElementById('passwordPopupSkip');
+  if (passwordPopupSkip) {
+    passwordPopupSkip.addEventListener('click', skipPasswordPopup);
+  }
+
+  const passwordPopupSubmit = document.getElementById('passwordPopupSubmit');
+  if (passwordPopupSubmit) {
+    passwordPopupSubmit.addEventListener('click', submitPasswordPopup);
+  }
+
+  const passwordPopupInput = document.getElementById('passwordPopupInput');
+  if (passwordPopupInput) {
+    passwordPopupInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        submitPasswordPopup();
+      }
+    });
   }
 
   const dz = document.getElementById('dropZone');
