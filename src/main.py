@@ -341,7 +341,7 @@ async def health_check():
 
 
 @app.post("/upload/")
-async def upload_file(file: UploadFile = File(...), password: Annotated[str | None, Header()] = None):
+async def upload_file(file: UploadFile = File(...), password: Annotated[str | None, Header()] = None, slug: Annotated[str | None, Header()] = None):
 
     if file.size > MAX_SIZE:
         logger.warning("Rejected upload for %s: file too large", file.filename)
@@ -349,7 +349,15 @@ async def upload_file(file: UploadFile = File(...), password: Annotated[str | No
 
     cleanup_expired_files()
 
-    file_id = generate_file_id()
+    # Validate slug if provided: allow only letters, numbers, hyphen and underscore
+    if slug:
+        import re
+        if not re.match(r'^[A-Za-z0-9_-]+$', slug):
+            logger.warning("Rejected upload: invalid slug %s", slug)
+            raise HTTPException(status_code=400, detail="Invalid slug: only letters, numbers, '-', and '_' are allowed")
+        file_id = slug
+    else:
+        file_id = generate_file_id()
     file_path = UPLOAD_DIR / file_id
 
     with open(file_path, "wb") as buffer:
