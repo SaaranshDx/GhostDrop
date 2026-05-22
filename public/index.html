@@ -467,24 +467,32 @@ body.modal-open {
         <span class="chev">▶</span>
       </div>
       <div class="ep-body">
-        <p>Accepts <code>multipart/form-data</code> with a single <code>file</code> field. Returns a UUID and expiry metadata.</p>
+        <p>Accepts <code>multipart/form-data</code> with a single <code>file</code> field. Returns a short file ID (either a 6-character random string or your custom slug) and expiry metadata.</p>
         <p><strong>Warning:</strong> API file uploads are limited to <strong>~4.5 MB</strong>. Larger files will be rejected.</p>
         <table class="ptbl">
           <thead><tr><th>field</th><th>type</th><th>required</th><th>description</th></tr></thead>
           <tbody>
             <tr><td>file</td><td>file</td><td style="color:var(--green)">yes</td><td>the file to upload</td></tr>
-            <tr><td>password</td><td>header</td><td>no</td><td>optional file password sent as a request header</td></tr>
+            <tr><td>slug</td><td>form</td><td>no</td><td>custom identifier (2+ chars, only letters/numbers/hyphens/underscores). Must not be a reserved slug (see below).</td></tr>
+            <tr><td>password</td><td>form</td><td>no</td><td>optional file password for protected downloads</td></tr>
           </tbody>
         </table>
+        <p><strong>Reserved slugs</strong> — these cannot be used: <code>upload</code>, <code>download</code>, <code>delete</code>, <code>health</code>, <code>files</code>, <code>metadata</code>, <code>api</code>, <code>admin</code>, <code>static</code>, <code>assets</code>, <code>public</code>, <code>docs</code>, <code>openapi</code>, <code>redoc</code>, <code>www</code>, <code>root</code>, <code>system</code>, <code>config</code>, <code>help</code>, <code>status</code></p>
         <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button>curl -X POST <span class="s">"https://link.ghostdrop.qzz.io/upload/"</span> \
-  -H <span class="s">"password: my-secret"</span> \
-  -F <span class="s">"file=@example.txt"</span></div>
+  -F <span class="s">"file=@example.txt"</span> \
+  -F <span class="s">"slug=my-file"</span> \
+  -F <span class="s">"password=my-secret"</span></div>
         <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button><span class="cm">// 200 OK</span>
 {
-  <span class="k">"id"</span>: <span class="s">"2b8c5f4c-0f1b-4d8e-8d3c-1f3a4d6b7e9f"</span>,
+  <span class="k">"id"</span>: <span class="s">"my-file"</span>,
   <span class="k">"original_name"</span>: <span class="s">"example.txt"</span>,
   <span class="k">"expires_in_hours"</span>: 6
 }</div>
+        <div class="code-blk"><span class="spill s400">400</span> { <span class="k">"detail"</span>: <span class="s">"Slug can only contain letters, numbers, hyphens and underscores"</span> }
+<span class="spill s400">400</span> { <span class="k">"detail"</span>: <span class="s">"That slug is reserved and cannot be used"</span> }
+<span class="spill s400">400</span> { <span class="k">"detail"</span>: <span class="s">"Slug must be at least 2 characters long"</span> }
+<span class="spill s409">409</span> { <span class="k">"detail"</span>: <span class="s">"Slug already in use"</span> }
+<span class="spill s413">413</span> { <span class="k">"detail"</span>: <span class="s">"File too large"</span> }</div>
       </div>
     </div>
 
@@ -496,11 +504,11 @@ body.modal-open {
         <span class="chev">▶</span>
       </div>
       <div class="ep-body">
-        <p>Downloads a file by UUID. Serves the original filename. If the file is password protected, send the password header or the API returns 401. If expired, deletes and returns 410.</p>
+        <p>Downloads a file by ID (either a custom slug or a short random string). Serves the original filename. If the file is password protected, send the password header or the API returns 401. If expired, deletes and returns 410.</p>
         <table class="ptbl">
           <thead><tr><th>param</th><th>in</th><th>description</th></tr></thead>
           <tbody>
-            <tr><td>file_id</td><td>path</td><td>UUID from POST /upload/</td></tr>
+            <tr><td>file_id</td><td>path</td><td>the ID or slug returned from POST /upload/</td></tr>
             <tr><td>password</td><td>header</td><td>required only for protected files</td></tr>
           </tbody>
         </table>
@@ -522,10 +530,10 @@ body.modal-open {
         <span class="chev">▶</span>
       </div>
       <div class="ep-body">
-        <p>Fetches metadata for an uploaded file by UUID. Returns the original filename, expiry timestamp, current view count, and whether a password is required.</p>
+        <p>Fetches metadata for an uploaded file by ID (slug or random string). Returns the original filename, expiry timestamp, current view count, and whether a password is required.</p>
         <table class="ptbl">
           <thead><tr><th>param</th><th>in</th><th>description</th></tr></thead>
-          <tbody><tr><td>file_id</td><td>path</td><td>UUID from POST /upload/</td></tr></tbody>
+          <tbody><tr><td>file_id</td><td>path</td><td>the ID or slug from POST /upload/</td></tr></tbody>
         </table>
         <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button>curl <span class="s">"https://link.ghostdrop.qzz.io/metadata/{file_id}"</span></div>
         <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button><span class="cm">// 200 OK</span>
@@ -537,6 +545,32 @@ body.modal-open {
 }</div>
         <div class="code-blk"><span class="spill s404">404</span> { <span class="k">"detail"</span>: <span class="s">"File not found"</span> }
 <span class="spill s410">410</span> { <span class="k">"error"</span>: <span class="s">"this file is gone"</span> }</div>
+      </div>
+    </div>
+
+    <div class="ep">
+      <div class="ep-head" onclick="toggleEp(this)">
+        <span class="method delete">DELETE</span>
+        <span class="ep-path">/delete/{file_id}</span>
+        <span class="ep-hint">delete a file</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="ep-body">
+        <p><strong>Self-hosted only.</strong> This endpoint is not available on the public GhostDrop instance. It only works on your own deployment.</p>
+        <p>Deletes an uploaded file and its metadata by ID. If the file is password protected, the correct password must be sent as a header.</p>
+        <table class="ptbl">
+          <thead><tr><th>param</th><th>in</th><th>description</th></tr></thead>
+          <tbody>
+            <tr><td>file_id</td><td>path</td><td>the ID or slug from POST /upload/</td></tr>
+            <tr><td>password</td><td>header</td><td>required only for protected files</td></tr>
+          </tbody>
+        </table>
+        <div class="code-blk"><button class="ccopy" onclick="cc(this)">copy</button>curl -X DELETE <span class="s">"https://your-instance/delete/{file_id}"</span> \
+  -H <span class="s">"password: my-secret"</span></div>
+        <div class="code-blk"><span class="spill s200">200</span> { <span class="k">"message"</span>: <span class="s">"File deleted"</span> }
+<span class="spill s401">401</span> { <span class="k">"detail"</span>: <span class="s">"Unauthorized"</span> }
+<span class="spill s404">404</span> { <span class="k">"detail"</span>: <span class="s">"File not found"</span> }
+<span class="spill s410">410</span> { <span class="k">"detail"</span>: <span class="s">"this file is gone"</span> }</div>
       </div>
     </div>
   </div>
