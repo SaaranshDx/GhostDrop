@@ -20,6 +20,33 @@ let qrScanSessionId = 0;
 let qrScanLastInvalidValue = '';
 let qrScanLastInvalidAt = 0;
 const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
+const SLUG_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+function validateSlugInput() {
+  const input = document.getElementById('uploadSlugInput');
+  const errorEl = document.getElementById('slugError');
+  if (!input || !errorEl) return true;
+  const val = input.value.trim();
+  if (!val) {
+    input.classList.remove('error');
+    errorEl.textContent = '';
+    return true;
+  }
+  if (val.length < 2) {
+    input.classList.add('error');
+    errorEl.textContent = 'Slug must be at least 2 characters';
+    return false;
+  }
+  if (!SLUG_PATTERN.test(val)) {
+    input.classList.add('error');
+    errorEl.textContent = 'Only letters, numbers, hyphens and underscores allowed';
+    return false;
+  }
+  input.classList.remove('error');
+  errorEl.textContent = '';
+  return true;
+}
+
 const PAGE_IDS = ['main', 'scan', 'api', 'changelog', 'tos', 'privacy'];
 const PAGE_TRANSITION_MS = 220;
 const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -1031,6 +1058,12 @@ async function proceedWithUpload(password = '') {
   }
   const slugInput = document.getElementById('uploadSlugInput');
   const slug = slugInput?.value ?? '';
+  if (slug && !validateSlugInput()) {
+    btn.disabled = false;
+    btn.textContent = 'upload';
+    toast('fix the slug before uploading', true);
+    return;
+  }
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span>uploading…';
   const fd = new FormData();
@@ -1053,7 +1086,22 @@ async function proceedWithUpload(password = '') {
       body: fd,
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'upload failed');
+    if (!res.ok) {
+      const msg = data.detail || data.error || 'upload failed';
+      if (res.status === 409) {
+        toast('slug "' + slug + '" is already in use', true);
+        if (slugInput) slugInput.classList.add('error');
+        document.getElementById('slugError').textContent = 'This slug is already taken';
+      } else if (res.status === 400 && slug && msg.toLowerCase().includes('slug')) {
+        toast(msg, true);
+        if (slugInput) slugInput.classList.add('error');
+        document.getElementById('slugError').textContent = msg;
+      } else {
+        toast(msg, true);
+      }
+      logFrontend('upload:server-rejected', { status: res.status, message: msg });
+      return;
+    }
     const url = 'https://link.ghostdrop.qzz.io' + '/' + data.id;
     const urlNode = document.getElementById('res-url');
     urlNode.textContent = url;
@@ -1072,7 +1120,10 @@ async function proceedWithUpload(password = '') {
     document.getElementById('filePill').textContent = '';
     if (slugInput) {
       slugInput.value = '';
+      slugInput.classList.remove('error');
     }
+    const slugErrorEl = document.getElementById('slugError');
+    if (slugErrorEl) slugErrorEl.textContent = '';
     selectedFile = null;
     shareFile(url);
     startExpiry(6 * 3600);
@@ -1084,17 +1135,6 @@ async function proceedWithUpload(password = '') {
       originalName: data.original_name,
       expiresInHours: data.expires_in_hours,
     });
-
-    if (res.status === 400) {
-      tries += 1;
-      logFrontend('upload:retry-requested', { tries });
-      reupload();
-    }
-
-    if (res.status === 413) {
-      toast('file too large (max 100MB)', true);
-      logFrontend('upload:server-rejected', { status: res.status });
-    }
 
   } catch(e) {
     toast('error: ' + e.message, true);
@@ -1692,6 +1732,11 @@ async function initializePage() {
   const uploadBtn = document.getElementById('uploadBtn');
   if (uploadBtn) {
     uploadBtn.addEventListener('click', uploadFile);
+  }
+
+  const slugInput = document.getElementById('uploadSlugInput');
+  if (slugInput) {
+    slugInput.addEventListener('input', validateSlugInput);
   }
 
   // Password popup event listeners

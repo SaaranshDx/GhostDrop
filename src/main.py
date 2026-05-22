@@ -62,6 +62,12 @@ DOWNLOAD_TEMPLATE_PATH = SRC_DIR / "public" / "download.html"
 DOWNLOAD_STYLES_PATH = SRC_DIR / "public" / "download.css"
 MAX_SIZE = 100 * 1024 * 1024  # 100MB
 SLUG_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
+RESERVED_SLUGS = {
+    "upload", "download", "delete", "health", "files",
+    "metadata", "api", "admin", "static", "assets",
+    "public", "docs", "openapi", "redoc", "www",
+    "root", "system", "config", "help", "status",
+}
 #fucking needs to be an integer
 service_port = int(os.getenv("PORT"))
 ngrok_status = os.getenv("NGROK_STATUS", "false").lower() == "true"
@@ -354,6 +360,15 @@ async def upload_file(file: UploadFile = File(...), password: Annotated[str | No
     if file.size > MAX_SIZE:
         logger.warning("Rejected upload for %s: file too large", file.filename)
         raise HTTPException(status_code=413, detail="File too large")
+
+    if slug:
+        slug_lower = slug.lower()
+        if not SLUG_PATTERN.fullmatch(slug):
+            raise HTTPException(status_code=400, detail="Slug can only contain letters, numbers, hyphens and underscores")
+        if slug_lower in RESERVED_SLUGS:
+            raise HTTPException(status_code=400, detail="That slug is reserved and cannot be used")
+        if len(slug) < 2:
+            raise HTTPException(status_code=400, detail="Slug must be at least 2 characters long")
 
     cleanup_expired_files()
 
