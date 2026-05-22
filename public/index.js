@@ -61,8 +61,7 @@ async function getApiUrl() {
 
   const url = await res.text();
   logFrontend('api-url:ready', { url: url.trim() });
-  //return url.trim();
-  return "http://localhost:8000";
+  return url.trim();
 }
 
 function isNfcSupported() {
@@ -1672,16 +1671,12 @@ async function initializePage() {
     nfcShareBtn.addEventListener('click', shareLatestFileOverNfc);
   }
 
-  const passwordBtn = document.getElementById('passwordBtn');
-  if (passwordBtn) {
-    passwordBtn.addEventListener('click', showPasswordPopup);
-  }
-
+/*
   const nfcReceiveBtn = document.getElementById('nfcReceiveBtn');
   if (nfcReceiveBtn) {
     nfcReceiveBtn.addEventListener('click', startNfcReceive);
   }
-
+*/
   const scanStartBtn = document.getElementById('scanStartBtn');
   if (scanStartBtn) {
     scanStartBtn.addEventListener('click', () => {
