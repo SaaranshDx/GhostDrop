@@ -7,3 +7,5 @@ reverse-proxy/.env
 reverse-proxy/node_modules
 pbserver/
 public/assets/*
+src/uploads/*
+src/uploads_meta/*

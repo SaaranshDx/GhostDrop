@@ -2,12 +2,13 @@ from pathlib import Path
 from html import escape
 import json
 import logging
+import re
 import shutil
 from typing_extensions import Annotated
 import uuid
 from urllib.parse import quote
 from datetime import datetime, time, timedelta, timezone
-from fastapi import FastAPI, File, Header, Request, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, Header, Request, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -60,6 +61,7 @@ METADATA_DIR = Path("uploads_meta")
 DOWNLOAD_TEMPLATE_PATH = SRC_DIR / "public" / "download.html"
 DOWNLOAD_STYLES_PATH = SRC_DIR / "public" / "download.css"
 MAX_SIZE = 100 * 1024 * 1024  # 100MB
+SLUG_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 #fucking needs to be an integer
 service_port = int(os.getenv("PORT"))
 ngrok_status = os.getenv("NGROK_STATUS", "false").lower() == "true"
@@ -177,7 +179,13 @@ def is_expired(metadata: dict) -> bool:
     return utc_now() >= datetime.fromisoformat(metadata["expires_at"])
 
 
-def generate_file_id(length: int = 6) -> str:
+def generate_file_id(slug: str | None = None, length: int = 6) -> str:
+    if slug and isinstance(slug, str) and SLUG_PATTERN.fullmatch(slug):
+        return slug
+
+    if slug:
+        logger.warning("Invalid slug provided, generating random file id instead: %s", slug)
+
     alphabet = string.ascii_letters + string.digits
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
@@ -341,7 +349,7 @@ async def health_check():
 
 
 @app.post("/upload/")
-async def upload_file(file: UploadFile = File(...), password: Annotated[str | None, Header()] = None, slug: Annotated[str | None, Header()] = None):
+async def upload_file(file: UploadFile = File(...), password: Annotated[str | None, Form()] = None, slug: Annotated[str | None, Form()] = None):
 
     if file.size > MAX_SIZE:
         logger.warning("Rejected upload for %s: file too large", file.filename)
@@ -349,16 +357,11 @@ async def upload_file(file: UploadFile = File(...), password: Annotated[str | No
 
     cleanup_expired_files()
 
-    # Validate slug if provided: allow only letters, numbers, hyphen and underscore
-    if slug:
-        import re
-        if not re.match(r'^[A-Za-z0-9_-]+$', slug):
-            logger.warning("Rejected upload: invalid slug %s", slug)
-            raise HTTPException(status_code=400, detail="Invalid slug: only letters, numbers, '-', and '_' are allowed")
-        file_id = slug
-    else:
-        file_id = generate_file_id()
+    file_id = generate_file_id(slug)
     file_path = UPLOAD_DIR / file_id
+
+    if file_path.exists():
+        raise HTTPException(status_code=409, detail="Slug already in use")
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
