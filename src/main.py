@@ -66,7 +66,7 @@ RESERVED_SLUGS = {
     "upload", "download", "delete", "health", "files",
     "metadata", "api", "admin", "static", "assets",
     "public", "docs", "openapi", "redoc", "www",
-    "root", "system", "config", "help", "status",
+    "root", "system", "config", "help", "status", "upload", "files", "metadata", "delete",
 }
 #fucking needs to be an integer
 service_port = int(os.getenv("PORT"))
