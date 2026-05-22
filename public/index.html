@@ -300,35 +300,41 @@ body.modal-open {
   <div class="release-popup__card">
     <div class="release-popup__content">
       <span class="release-popup__eyebrow">Release update</span>
-      <h2 id="releasePopupTitle">GhostDrop v1.3 beta</h2>
-      <p class="release-popup__lead" id="releasePopupDescription">This update focuses on improving file sharing capabilities, enhancing the user experience with better navigation controls, and optimizing frontend performance and SEO.</p>
+      <h2 id="releasePopupTitle">GhostDrop v1.4</h2>
+      <p class="release-popup__lead" id="releasePopupDescription">This update introduces custom slugs, password-protected uploads, QR code scanning, Docker support, and a completely reworked download page experience.</p>
 
       <div class="release-popup__grid">
         <section class="release-popup__section" aria-labelledby="releaseFeatures">
           <h3 id="releaseFeatures">Features</h3>
           <ul>
-            <li>Share Functionality — Added file sharing capabilities with improved share button visibility logic for better user engagement</li>
-            <li>Sidebar Navigation Improvements — Added sidebar drag handle and indicator for improved navigation experience</li>
-            <li>Google Analytics Integration — Added Google Analytics tracking script for better analytics and user behavior tracking</li>
-            <li>SEO Enhancements — Created robots.txt and sitemap.xml files for improved search engine optimization</li>
+            <li>Custom Slugs — Upload files with a custom identifier instead of a random string, with format validation and reserved slug protection</li>
+            <li>Password Protection — Optionally protect uploaded files with a password; stored securely using Argon2 hashing</li>
+            <li>File Metadata — Download page now shows file name, size, view count, and expiry time with Discord embed support</li>
+            <li>QR Code Scanning — Built-in QR scanner to quickly open shared file links from other devices</li>
+            <li>Share Popup — Dedicated share UI with direct link, QR code, and NFC sharing options</li>
+            <li>Client Page & Installers — New client download page with Windows install script and Android APK support</li>
+            <li>Debug Overlay — Developer debug panel with real-time frontend event logging</li>
+            <li>Docker Support — Official Dockerfile for easy self-hosted deployment</li>
           </ul>
         </section>
 
         <section class="release-popup__section" aria-labelledby="releaseImprovements">
           <h3 id="releaseImprovements">Improvements</h3>
           <ul>
-            <li>File Upload Process — Improved file size validation in the upload process for better error handling</li>
-            <li>Frontend Performance — Improved CSS overflow handling for better layout consistency and rendering performance</li>
-            <li>Mobile Experience — Enhanced mobile responsive design to ensure optimal viewing on all devices</li>
+            <li>Download Page — Complete overhaul with file metadata display (name, size, views, expiry) and smoother animations</li>
+            <li>Slug Validation — Real-time input validation with inline error messages and reserved slug list</li>
+            <li>Error Handling — Granular HTTP error codes (400, 409, 413) with frontend-specific error toasts and inline feedback</li>
+            <li>API Robustness — Fixed slug header/form mismatch and server URL resolution for reliable operation behind proxies</li>
           </ul>
         </section>
 
         <section class="release-popup__section" aria-labelledby="releaseFixes">
           <h3 id="releaseFixes">Fixes</h3>
           <ul>
-            <li>Mobile Download Link Visibility — Fixed download link visibility on mobile devices to ensure proper access</li>
-            <li>API Documentation URLs — Fixed broken API documentation URLs in README and main documentation</li>
-            <li>UI Polish — Added shadow effect to sidebar for enhanced visual appearance and depth perception</li>
+            <li>Slug Upload — Fixed slug not being received by backend (Header → Form data migration)</li>
+            <li>Dev Server Leak — Fixed backend resolving to dev server URL in production builds</li>
+            <li>Docker Build — Fixed broken dependency file path in Docker image</li>
+            <li>File Overwrite — Added conflict detection: uploading with an existing slug now returns 409 instead of silently overwriting</li>
           </ul>
         </section>
       </div>
@@ -571,40 +577,51 @@ body.modal-open {
         <h2>Changelog</h2>
         <p class="changelog-subtitle">All notable changes after <code>v1.2</code> are listed here in reverse chronological order.</p>
       </div>
-      <span class="changelog-updated">Updated May 1, 2026</span>
+      <span class="changelog-updated">Updated May 22, 2026</span>
     </div>
 
     <div class="changelog-list">
       <section class="changelog-entry">
         <div class="changelog-entry-head">
           <div>
-            <h3>Unreleased</h3>
-            <p>Frontend and docs polish currently reflected on the site.</p>
+            <h3>v1.4 — Custom Slugs &amp; Password Protection</h3>
+            <p>Custom upload identifiers, password-protected files, Docker support, and a rebuilt download page.</p>
           </div>
-          <span class="changelog-stamp">In progress</span>
+          <span class="changelog-stamp"><code>1c7de9e</code> … <code>HEAD</code></span>
+        </div>
+
+        <div class="changelog-group">
+          <h4>Added</h4>
+          <ul>
+            <li>Custom slug support — upload with a user-chosen identifier; validated server-side with reserved slug protection.</li>
+            <li>Password-protected uploads — optional file passwords hashed with Argon2; prompted on download.</li>
+            <li>File metadata on the download page — displays original name, size, view count, and remaining expiry time.</li>
+            <li>Discord embed support — shared file links show rich previews with file name, size, and expiry.</li>
+\            <li>Share popup UI — dedicated modal with direct link, QR code, and NFC share actions.</li>
+            <li>Client download page with Windows installer script (<code>install.ps1</code>) and Android APK support.</li>
+            <li>Debug overlay (<code>GHOSTDROP_DEBUG_UI</code>) — developer panel with real-time frontend event logging.</li>
+            <li>Dockerfile for self-hosted deployment.</li>
+          </ul>
         </div>
 
         <div class="changelog-group">
           <h4>Changed</h4>
           <ul>
-            <li>Introduced animated page transitions for section changes, with safeguards so the active page does not reanimate when clicked again.</li>
-            <li>Refined desktop nav active-state behavior with a smoother indicator treatment.</li>
-            <li>Reworked the phone nav into a bottom-docked bar and disabled drag-only motion on mobile.</li>
-            <li>Updated the API docs interactions with animated endpoint headers and sliding accordion open and close behavior.</li>
+            <li>Download page overhaul — complete redesign showing file metadata (name, size, views, expiry) with smoother animations.</li>
+            <li>Slug input now validates in real time with inline error messages.</li>
+            <li>Upload error handling uses distinct HTTP status codes (400, 409, 413) with frontend-specific toasts and inline feedback.</li>
+            <li>Metadata structure updated with views counter and size bytes for embed descriptions.</li>
+            <li>Backend server URL resolution fixed to avoid leaking the dev server in production.</li>
           </ul>
         </div>
 
         <div class="changelog-group">
           <h4>Fixed</h4>
           <ul>
-            <li>Fixed highlight clipping and stability issues in the mobile navigation state.</li>
-          </ul>
-        </div>
-
-        <div class="changelog-group">
-          <h4>Docs</h4>
-          <ul>
-            <li>Updated the Terms of Service and Privacy Policy to reflect the current password-protection, metadata, and analytics behavior.</li>
+            <li>Slug parameter mismatch — backend was reading from headers while frontend sent it as form data; corrected to <code>Form()</code>.</li>
+            <li>File overwrite with duplicate slugs — uploading an existing slug now returns HTTP 409 instead of silently replacing the file.</li>
+            <li>Broken Docker build due to incorrect dependency file path.</li>
+            <li>Various slug validation edge cases — format, length, and reserved word checks.</li>
           </ul>
         </div>
       </section>
@@ -763,7 +780,7 @@ function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 
 gtag('config', 'G-RBQ1FSXXQG');
-const RELEASE_POPUP_COOKIE = 'ghostdrop_release_v1_3_beta_seen';
+const RELEASE_POPUP_COOKIE = 'ghostdrop_release_v1_4_seen';
 
 function setReleasePopupCookie(name, value, days) {
   const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
