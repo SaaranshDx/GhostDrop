@@ -1,4 +1,4 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html { overflow-x: hidden; }
 :root {
   --bg: #080808;
@@ -701,3 +701,4 @@ input[type=text]::placeholder { color: var(--muted); }
 ::selection {
   background-color: #000000;
 }
+
