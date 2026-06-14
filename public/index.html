@@ -360,13 +360,25 @@ body.modal-open {
   </div>
 </div>
 
-   
-<div class="status-belt" aria-label="Service status notice">
-  <div class="status-belt-track">
-    <div class="status-belt-item"><strong>Heads up:</strong> We are aware of some issues with file uploads. &nbsp;///&nbsp;</div>
-    <div class="status-belt-item"><strong>Heads up:</strong> We are aware of some issues with file uploads. &nbsp;///&nbsp;</div>
-    <div class="status-belt-item"><strong>Heads up:</strong> We are aware of some issues with file uploads. &nbsp;///&nbsp;</div>
-    <div class="status-belt-item"><strong>Heads up:</strong> We are aware of some issues with file uploads. &nbsp;///&nbsp;</div>
+    
+<div class="shutdown-popup" id="shutdownPopup" role="dialog" aria-modal="true" aria-labelledby="shutdownPopupTitle">
+  <div class="shutdown-popup__card">
+    <div class="shutdown-popup__content">
+      <span class="shutdown-popup__eyebrow">Important notice</span>
+      <h2 class="shutdown-popup__title" id="shutdownPopupTitle">Service shutting down</h2>
+      <p class="shutdown-popup__body">GhostDrop will be discontinued on <strong>June 20, 2026</strong> and will no longer be accessible after this date.</p>
+      <p class="shutdown-popup__countdown" id="shutdownCountdown"></p>
+      <button type="button" class="shutdown-popup__button" id="shutdownPopupDismiss">I understand</button>
+    </div>
+  </div>
+</div>
+
+<div class="shutdown-overlay" id="shutdownOverlay" hidden>
+  <div class="shutdown-overlay__card">
+    <div class="shutdown-overlay__icon">&#9888;</div>
+    <h1 class="shutdown-overlay__title">Service Shut Down</h1>
+    <p class="shutdown-overlay__desc">GhostDrop has been discontinued as of <strong>June 20, 2026</strong> and is no longer accessible.</p>
+    <p class="shutdown-overlay__sub">Thank you for using GhostDrop.</p>
   </div>
 </div>
 
