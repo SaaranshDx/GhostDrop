@@ -801,6 +801,27 @@ input[type=text]::placeholder { color: var(--muted); }
   opacity: 0.9;
 }
 
+.shutdown-popup__links {
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.shutdown-popup__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.shutdown-popup__links a:hover {
+  color: var(--text);
+}
+
 /* SHUTDOWN OVERLAY */
 .shutdown-overlay {
   position: fixed;
@@ -854,6 +875,27 @@ input[type=text]::placeholder { color: var(--muted); }
   font-family: var(--mono);
   font-size: 12px;
   color: var(--muted2);
+}
+
+.shutdown-overlay__links {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.shutdown-overlay__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.shutdown-overlay__links a:hover {
+  color: var(--text);
 }
 
 body.shutdown-active .top-links,
