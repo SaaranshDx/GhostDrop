@@ -4,17 +4,14 @@ GhostDrop is a fast and simple file sharing service that lets you upload files a
 
 No accounts. No hassle. Just upload and share.
 
-## Try it
+## Project Status
 
-[https://ghostdrop.qzz.io](https://ghostdrop.qzz.io)
+GhostDrop ceased operations on June 20, 2026.
 
-## API Documentation
+Thank you to everyone who used, tested, and shared GhostDrop over its lifespan.
 
-[https://ghostdrop.qzz.io/#api](https://ghostdrop.qzz.io/#api)
-
-## Features
-
-- Instant shareable links
-- Temporary file storage
-- Mobile app
-- Lightweight and fast
+<div align="center">
+A product by
+<a href="https://mizucode.qzz.io">
+<img src="assets/org.png" alt="The Mizu Code Project" width="400">
+</a>
